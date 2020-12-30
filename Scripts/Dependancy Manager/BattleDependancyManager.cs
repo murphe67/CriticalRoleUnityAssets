@@ -1,6 +1,9 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using CriticalRole.BattleCamera;
+using CriticalRole.Turns;
+using CriticalRole.UI;
 
 //----------------------------------------------------------------------------
 //             Class Description
@@ -32,6 +35,7 @@ public interface IBattleDependancyManager
     void RegisterMapGeneration(MapGeneration mapGeneration);
     void RegisterUI_Input(UI_Input ui_Input);
     void RegisterTurnController(TurnController turnController);
+    void RegisterCameraManager(BattleCamManager myBattleCameraManager);
 }
 
 
@@ -80,6 +84,13 @@ public class BattleDependancyManager : MonoBehaviour, IBattleDependancyManager
 
     TurnController MyTurnController;
 
+    public void RegisterCameraManager(BattleCamManager myBattleCameraManager)
+    {
+        MyBattleCameraManager = myBattleCameraManager;
+    }
+
+    BattleCamManager MyBattleCameraManager;
+
     #endregion
 
 
@@ -101,12 +112,11 @@ public class BattleDependancyManager : MonoBehaviour, IBattleDependancyManager
     // to it, so it should exist before runtime
     private void Start()
     {
-        Debug.Assert(MyMapGeneration != null);
-        Debug.Assert(MyUI_Input != null);
-        Debug.Assert(MyTurnController != null);
-
         MyMapGeneration.Initialise();
+        MyTurnController.Initialise();
         MyUI_Input.Initialise();
+        MyBattleCameraManager.Initialise();
+
         MyTurnController.BeginGame();
     }
 

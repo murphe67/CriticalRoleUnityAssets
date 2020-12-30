@@ -7,7 +7,7 @@ using UnityEngine;
 //              Class Description
 //----------------------------------------------------------------------------
 //
-// Empty class to allow access to all IHexagons
+// Empty class to allow depedancy injection into IHexagon
 //
 
 /// <summary>

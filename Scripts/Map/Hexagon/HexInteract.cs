@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.EventSystems;
+using CriticalRole.UI;
 
 public interface IHexInteract
 { 
@@ -22,27 +23,34 @@ public class HexInteract : MonoBehaviour, IPointerClickHandler, IPointerEnterHan
     public IHexagon hex { get; set; }
     public bool clickable = false;
 
+    private void Awake()
+    {
+        MyMaterial = GetComponent<MeshRenderer>().material;
+    }
+
+    public Material MyMaterial;
+
     public void MakeSelectable()
     {
-        gameObject.GetComponentInChildren<MeshRenderer>().material.SetColor("_Color", RedTransparent);
+        MyMaterial.SetColor("_Color", RedTransparent);
         clickable = true;
     }
 
     public void MakeUnselectable()
     {
-        gameObject.GetComponentInChildren<MeshRenderer>().material.SetColor("_Color", WhiteTransparent);
+        MyMaterial.SetColor("_Color", WhiteTransparent);
         clickable = false;
         
     }
 
     public void Highlight()
     {
-        gameObject.GetComponentInChildren<MeshRenderer>().material.SetColor("_Color", BlueTransparent);
+        MyMaterial.SetColor("_Color", BlueTransparent);
     }
 
     public void Unhighlight()
     {
-        gameObject.GetComponentInChildren<MeshRenderer>().material.SetColor("_Color", RedTransparent);
+        MyMaterial.SetColor("_Color", RedTransparent);
     }
 
     public Color RedTransparent

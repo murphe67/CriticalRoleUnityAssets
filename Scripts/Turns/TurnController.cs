@@ -1,125 +1,193 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using CriticalRole.BattleCamera;
 
-//----------------------------------------------------------------------------
-//             Class Description
-//----------------------------------------------------------------------------
-//
-// Manages the turn based nature of gameplay.
-// Generates an initiative order, then calls StartTurn on the first IHasTurn
-// Calls StartTurn on the next one once TurnChangeover is called
-
-public interface ITurnController
-{
-    void TurnChangeover();
-}
-
-
-public class TurnController : MonoBehaviour, ITurnController
+namespace CriticalRole.Turns
 {
 
-    private void Awake()
+    //----------------------------------------------------------------------------
+    //             Class Description
+    //----------------------------------------------------------------------------
+    //
+    // Manages the turn based nature of gameplay.
+    // Generates an initiative order, then calls StartTurn on the first IHasTurn
+    // Calls StartTurn on the next one once TurnChangeover is called
+
+    public interface ITurnController
     {
-        GameObject dependancyGO = FindObjectOfType<DependancyManagerMarker>().gameObject;
-        IBattleDependancyManager dependancyManager = dependancyGO.GetComponent<IBattleDependancyManager>();
-        dependancyManager.RegisterTurnController(this);
+        void TurnChangeover();
+
+        void AddStartTurnEvent(IStartTurnEvent startTurnEvent);
     }
 
-    /// <summary>
-    /// Sorted Initiative Order
-    /// </summary>
-    public List<ITurnSort> TurnList;
-
-    /// <summary>
-    /// Last initiative order index
-    /// </summary>
-    [HideInInspector]
-    public int HasTurnMaxIndex;
-
-    /// <summary>
-    /// current initiative order index
-    /// </summary>
-    [HideInInspector]
-    public int CurrentTurn;
 
 
-    //----------------------------------------------------------------------------
-    //             Initialise
-    //----------------------------------------------------------------------------
 
-    #region Initialise
 
-    /// <summary>
-    /// BeginGame starts the first turn <para />
-    /// Must be called last by the dependancy manager
-    /// </summary>
-    public void BeginGame()
+
+    [RequireComponent(typeof(TurnControllerMarker))]
+    public class TurnController : MonoBehaviour, ITurnController
     {
-        HasTurnMarker[] TurnMarkerArray = GameObject.FindObjectsOfType<HasTurnMarker>();
-        TurnList = new List<ITurnSort>();
 
-        HasTurnMaxIndex = -1;
-        foreach (HasTurnMarker turnMarker in TurnMarkerArray)
+        //----------------------------------------------------------------------------
+        //             Registration
+        //----------------------------------------------------------------------------
+        
+        #region Registration
+
+        private void Awake()
         {
-            HasTurnMaxIndex++;
-            IHasTurn hasTurn = turnMarker.gameObject.GetComponent<IHasTurn>();
-            hasTurn.Initialise(this);
-            TurnList.Add(turnMarker.gameObject.GetComponent<IHasTurn>().TurnSort);
+            GameObject dependancyGO = FindObjectOfType<DependancyManagerMarker>().gameObject;
+            IBattleDependancyManager dependancyManager = dependancyGO.GetComponent<IBattleDependancyManager>();
+            dependancyManager.RegisterTurnController(this);
         }
 
-        TurnList.Sort();
+        #endregion
 
-        CurrentTurn = -1;
-        TurnChangeover();
-    }
 
-    #endregion
 
-    //----------------------------------------------------------------------------
-    //             Turn Changeover
-    //----------------------------------------------------------------------------
 
-    #region Turn Changeover
 
-    /// <summary>
-    /// Update the index and call StartTurn
-    /// </summary>
-    public void TurnChangeover()
-    {
-        StartCoroutine(TurnChangeoverCoroutine());
-    }
+        //----------------------------------------------------------------------------
+        //             Initialise
+        //----------------------------------------------------------------------------
 
-    /// <summary>
-    /// Increase the initiative order index. If it is out of bounds, go back to the beginning
-    /// </summary>
-    public void UpdateCurrentTurn()
-    {
-        CurrentTurn++;
-        if(CurrentTurn > HasTurnMaxIndex)
+        #region Initialise
+
+        /// <summary>
+        /// BeginGame starts the first turn <para />
+        /// Must be called last by the dependancy manager
+        /// </summary>
+        public void Initialise()
         {
-            CurrentTurn = 0;
+            BuildTurnList();
+            StartTurnEvents = new List<IStartTurnEvent>();
+
+            Hideable[] hideables = FindObjectsOfType<Hideable>();
+            foreach(Hideable hideable in hideables)
+            {
+                hideable.Initialise();
+            }
         }
+
+        /// <summary>
+        /// Sorted Initiative Order
+        /// </summary>
+        public List<ITurnSort> TurnList;
+
+        public List<IStartTurnEvent> StartTurnEvents;
+
+        #endregion
+        //----------------------------------------------------------------------------
+        //             AddStartTurnEvent
+        //----------------------------------------------------------------------------
+
+        public void AddStartTurnEvent(IStartTurnEvent startTurnEvent)
+        {
+            StartTurnEvents.Add(startTurnEvent);
+        }
+
+        //----------------------------------------------------------------------------
+        //             BeginGame
+        //----------------------------------------------------------------------------
+
+        public void BeginGame()
+        {
+            StartTurnEvents.Sort(new StartTurnSort());
+            TurnChangeover();
+        }
+
+
+        //----------------------------------------------------------------------------
+        //             BuildTurnList
+        //---------------------------------------------------------------------------
+
+        public void BuildTurnList()
+        {
+            HasTurnMarker[] TurnMarkerArray = GameObject.FindObjectsOfType<HasTurnMarker>();
+            TurnList = new List<ITurnSort>();
+
+            HasTurnMaxIndex = -1;
+            foreach (HasTurnMarker turnMarker in TurnMarkerArray)
+            {
+                HasTurnMaxIndex++;
+                IHasTurn hasTurn = turnMarker.gameObject.GetComponent<IHasTurn>();
+                hasTurn.Initialise(this);
+                TurnList.Add(turnMarker.gameObject.GetComponent<IHasTurn>().TurnSort);
+            }
+
+            TurnList.Sort();
+            CurrentTurn = -1;
+        }
+
+        //----------------------------------------------------------------------------
+        //             UpdateCameraTurn
+        //----------------------------------------------------------------------------
+
+        #region UpdateCurrentTurn
+        public void UpdateCurrentTurn()
+        {
+            CurrentTurn++;
+            if (CurrentTurn > HasTurnMaxIndex)
+            {
+                CurrentTurn = 0;
+            }
+        }
+
+        /// <summary>
+        /// Last initiative order index
+        /// </summary>
+        [HideInInspector]
+        public int HasTurnMaxIndex;
+
+        /// <summary>
+        /// current initiative order index
+        /// </summary>
+        [HideInInspector]
+        public int CurrentTurn;
+
+        #endregion
+
+
+
+
+        //----------------------------------------------------------------------------
+        //             Turn Changeover
+        //----------------------------------------------------------------------------
+
+        #region Turn Changeover
+
+        /// <summary>
+        /// Update the index and call StartTurn
+        /// </summary>
+        public void TurnChangeover()
+        {
+            StartCoroutine(TurnChangeoverCoroutine());
+        }
+
+        public IEnumerator TurnChangeoverCoroutine()
+        {
+            UpdateCurrentTurn();
+            foreach (IStartTurnEvent startTurnEvent in StartTurnEvents)
+            {
+                yield return StartCoroutine(startTurnEvent.StartTurn(TurnList[CurrentTurn].HasTurn));
+            }
+            TurnList[CurrentTurn].HasTurn.StartTurn();
+        }
+
+
+        #endregion
+        /// <summary>
+        /// Increase the initiative order index. If it is out of bounds, go back to the beginning
+        /// </summary>
+        /// 
+
+
+
+
+
+
     }
 
-    #endregion
-
-    //----------------------------------------------------------------------------
-    //             Camera Transition
-    //----------------------------------------------------------------------------
-
-    public GameObject BattleCam;
-    public TurnTransitionCamera OtherCam;
-
-    public IEnumerator TurnChangeoverCoroutine()
-    {
-        UpdateCurrentTurn();
-        yield return new WaitForSeconds(0.1f);
-        BattleCam.SetActive(false);
-
-        yield return StartCoroutine(OtherCam.TurnTransition(TurnList[CurrentTurn].HasTurn));
-
-        BattleCam.SetActive(true);
-        TurnList[CurrentTurn].HasTurn.StartTurn();
-    }
 }

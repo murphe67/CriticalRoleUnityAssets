@@ -7,7 +7,7 @@ using UnityEngine;
 //            Class Description
 //----------------------------------------------------------------------------
 
-    //Empty class to allow MapGeneration to access all terrains
+//Empty class to allow dependancy injection into TerrainBlockers
 
 public class TerrainMarker : MonoBehaviour
 {

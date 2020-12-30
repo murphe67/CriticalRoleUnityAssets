@@ -6,7 +6,7 @@ using UnityEngine;
 //                    Class Description
 //----------------------------------------------------------------------------
 //
-// Empty component to allow access to all the IHexContents
+// Empty component to dependancy injection into IHexContent
 
 public class IHexContentMarker : MonoBehaviour
 {

@@ -122,8 +122,6 @@ public class MapGeneration : MonoBehaviour, IMapGeneration
         GameObject HexagonGO = Instantiate(HexagonPrefab, new Vector3(x_loc, 0, z_loc), Quaternion.identity, gameObject.transform);
         HexagonGO.name = "Hex " + coords.ToString();
 
-        //custom function instead of constructor
-        //due to monobehaviour
         Hexagon hexagon = HexagonGO.AddComponent<Hexagon>();
         hexagon.Initialise(coords, 1);
         HexDict.Add(coords, hexagon);
@@ -152,7 +150,7 @@ public class MapGeneration : MonoBehaviour, IMapGeneration
             List<IHexagon> neighbours = new List<IHexagon>();
             foreach (Vector3Int direction in directions)
             {
-                Vector3Int neighbourCoords = ((IHexagon)hex.Value).CoOrds + direction;
+                Vector3Int neighbourCoords = hex.Value.CoOrds + direction;
 
                 if (HexDict.ContainsKey(neighbourCoords))
                 {
@@ -204,7 +202,7 @@ public class MapGeneration : MonoBehaviour, IMapGeneration
 
             //object told about hex
             contents.Location = HexDict[HexMath.CalculateHexCoords(contents.ContentTransform.position)];
-            //hex told about hex
+            //hex told about object
             contents.Location.Contents = contents;
 
             //Move the object to the centre of the hex

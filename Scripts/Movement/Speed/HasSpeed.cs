@@ -65,7 +65,7 @@ public class HasSpeed : MonoBehaviour, IHasSpeed
     /// This is the variable that will be edited by the character race <para/>
     /// Temporarily readonly to stop inspector override
     /// </summary>
-    public readonly int BaseSpeedInt = 5;
+    public readonly int BaseSpeedInt = 7;
 
     /// <summary>
     /// SpeedAlteration that is called first by the SpeedAlterer <para/>
