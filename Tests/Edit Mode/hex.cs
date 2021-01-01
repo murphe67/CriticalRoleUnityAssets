@@ -16,17 +16,19 @@ namespace Tests
             GameObject gameObject = new GameObject("base");
             Hexagon hex = gameObject.AddComponent<Hexagon>();
 
-            List<IHexagon> neighbours = new List<IHexagon>();
+            HashSet<IHexagon> neighbours = new HashSet<IHexagon>();
             for(int i = 0; i < 6; i++)
             {
                 neighbours.Add(Substitute.For<IHexagon>());
             }
 
+            hex.Initialise(new Vector3Int(0,0,0), 1);
+
             //ACT
-            hex.AddNeighbours(neighbours);
+            hex.MyHexMapRestricted.SetNeighbours(neighbours);
 
             //ASSERT
-            Assert.AreEqual(hex.Neighbours, neighbours);
+            Assert.AreEqual(hex.MyHexMap.Neighbours, neighbours);
         }
 
         [Test]
@@ -41,7 +43,7 @@ namespace Tests
             hex.Initialise(coords, 1);
 
             //ASSERT
-            Assert.AreEqual(hex.CoOrds, coords);
+            Assert.AreEqual(hex.MyHexMap.CoOrds, coords);
         }
     }
 }

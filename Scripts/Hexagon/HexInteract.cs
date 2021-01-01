@@ -7,19 +7,17 @@ using CriticalRole.UI;
 public interface IHexInteract
 { 
     IHexagon hex { get; set; }
-    UI_Input MyUI_Input { get; set; }
+    I_UIManager MyUIManager { get; set; }
     void MakeSelectable();
 
     void MakeUnselectable();
 
-    void Highlight();
-
-    void Unhighlight();
+    void ChangeColor(Color color);
 }
 
-public class HexInteract : MonoBehaviour, IPointerClickHandler, IPointerEnterHandler, IHexInteract
+public class HexInteract : MonoBehaviour, IPointerClickHandler, IPointerEnterHandler, IPointerExitHandler, IHexInteract
 {
-    public UI_Input MyUI_Input { get; set; }
+    public I_UIManager MyUIManager { get; set; }
     public IHexagon hex { get; set; }
     public bool clickable = false;
 
@@ -32,44 +30,23 @@ public class HexInteract : MonoBehaviour, IPointerClickHandler, IPointerEnterHan
 
     public void MakeSelectable()
     {
-        MyMaterial.SetColor("_Color", RedTransparent);
         clickable = true;
     }
 
     public void MakeUnselectable()
     {
-        MyMaterial.SetColor("_Color", WhiteTransparent);
         clickable = false;
-        
+        MyMaterial.SetColor("_Color", DefaultHexColor);
     }
 
-    public void Highlight()
+    public void ChangeColor(Color color)
     {
-        MyMaterial.SetColor("_Color", BlueTransparent);
+        Color transColor = color;
+        transColor.a = AlphaValue;
+        MyMaterial.SetColor("_Color", transColor);
     }
 
-    public void Unhighlight()
-    {
-        MyMaterial.SetColor("_Color", RedTransparent);
-    }
-
-    public Color RedTransparent
-    {
-        get
-        {
-            return new Color(1, 0, 0, AlphaValue);
-        }
-    }
-
-    public Color BlueTransparent
-    {
-        get
-        {
-            return new Color(0, 0, 1, AlphaValue);
-        }
-    }
-
-    public Color WhiteTransparent
+    public Color DefaultHexColor
     {
         get
         {
@@ -84,7 +61,7 @@ public class HexInteract : MonoBehaviour, IPointerClickHandler, IPointerEnterHan
     {
         if (eventData.button == PointerEventData.InputButton.Left && clickable)
         {
-            MyUI_Input.IHexagonClicked(hex);
+            MyUIManager.IHexagonClicked(hex);
         }
     }
 
@@ -92,7 +69,15 @@ public class HexInteract : MonoBehaviour, IPointerClickHandler, IPointerEnterHan
     {
         if(clickable)
         {
-            MyUI_Input.IHexagonHovered(hex);
+            MyUIManager.IHexagonHovered(hex);
+        }
+    }
+
+    public void OnPointerExit(PointerEventData eventData)
+    {
+        if (clickable)
+        {
+            MyUIManager.IHexagonUnhovered(hex);
         }
     }
 

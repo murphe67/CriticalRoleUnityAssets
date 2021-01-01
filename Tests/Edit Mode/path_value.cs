@@ -14,12 +14,12 @@ namespace Tests
             GameObject gameObject = new GameObject();
             IHexagon hex1 = Substitute.For<IHexagon>();
             Vector3Int coords1 = new Vector3Int(1, -1, 0);
-            hex1.CoOrds.Returns(coords1);
+            hex1.MyHexMap.CoOrds.Returns(coords1);
             hex1.HexTransform.Returns(gameObject.transform);
 
             IHexagon hex2 = Substitute.For<IHexagon>();
             Vector3Int coords2 = new Vector3Int(1, -1, 0);
-            hex2.CoOrds.Returns(coords2);
+            hex2.MyHexMap.CoOrds.Returns(coords2);
             hex2.HexTransform.Returns(gameObject.transform);
 
             Vector3 centre = new Vector3(0, 0, 0);
@@ -37,12 +37,12 @@ namespace Tests
             GameObject gameObject = new GameObject();
             IHexagon hex1 = Substitute.For<IHexagon>();
             Vector3Int coords1 = new Vector3Int(1, -1, 0);
-            hex1.CoOrds.Returns(coords1);
+            hex1.MyHexMap.CoOrds.Returns(coords1);
             hex1.HexTransform.Returns(gameObject.transform);
 
             IHexagon hex2 = Substitute.For<IHexagon>();
             Vector3Int coords2 = new Vector3Int(0, 1, -1);
-            hex2.CoOrds.Returns(coords2);
+            hex2.MyHexMap.CoOrds.Returns(coords2);
             hex2.HexTransform.Returns(gameObject.transform);
 
             Vector3 centre = new Vector3(0, 0, 0);
@@ -60,12 +60,12 @@ namespace Tests
             GameObject gameObject = new GameObject();
             IHexagon hex1 = Substitute.For<IHexagon>();
             Vector3Int coords1 = new Vector3Int(0, -1, -1);
-            hex1.CoOrds.Returns(coords1);
+            hex1.MyHexMap.CoOrds.Returns(coords1);
             hex1.HexTransform.Returns(gameObject.transform);
 
             IHexagon hex2 = Substitute.For<IHexagon>();
             Vector3Int coords2 = new Vector3Int(1, 0, -1);
-            hex2.CoOrds.Returns(coords2);
+            hex2.MyHexMap.CoOrds.Returns(coords2);
             hex2.HexTransform.Returns(gameObject.transform);
 
             Vector3 centre = new Vector3(0, 0, 0);
@@ -82,12 +82,12 @@ namespace Tests
             GameObject gameObject = new GameObject();
             IHexagon hex1 = Substitute.For<IHexagon>();
             Vector3Int coords1 = new Vector3Int(0, -1, -1);
-            hex1.CoOrds.Returns(coords1);
+            hex1.MyHexMap.CoOrds.Returns(coords1);
             hex1.HexTransform.Returns(gameObject.transform);
 
             IHexagon hex2 = Substitute.For<IHexagon>();
             Vector3Int coords2 = new Vector3Int(1, 0, -1);
-            hex2.CoOrds.Returns(coords2);
+            hex2.MyHexMap.CoOrds.Returns(coords2);
             hex2.HexTransform.Returns(gameObject.transform);
 
 
@@ -105,12 +105,12 @@ namespace Tests
             GameObject gameObject = new GameObject();
             IHexagon hex1 = Substitute.For<IHexagon>();
             Vector3Int coords1 = new Vector3Int(0, -1, -1);
-            hex1.CoOrds.Returns(coords1);
+            hex1.MyHexMap.CoOrds.Returns(coords1);
             hex1.HexTransform.Returns(gameObject.transform);
 
             IHexagon hex2 = Substitute.For<IHexagon>();
             Vector3Int coords2 = new Vector3Int(1, 0, -1);
-            hex2.CoOrds.Returns(coords2);
+            hex2.MyHexMap.CoOrds.Returns(coords2);
             hex2.HexTransform.Returns(gameObject.transform);
 
 

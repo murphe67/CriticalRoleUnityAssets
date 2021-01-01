@@ -8,7 +8,7 @@ using UnityEngine;
 //
 // Empty component to dependancy injection into IHexContent
 
-public class IHexContentMarker : MonoBehaviour
+public class IContentMarker : MonoBehaviour
 {
 
 }

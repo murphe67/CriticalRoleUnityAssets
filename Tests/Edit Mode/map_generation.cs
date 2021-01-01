@@ -50,27 +50,30 @@ namespace Tests
             //ARRANGE
             GameObject hexGO = new GameObject();
             GameObject gameObject = new GameObject();
-            MapGeneration myMapGeneration = gameObject.AddComponent<MapGeneration>();
-            myMapGeneration.HexagonPrefab = hexGO;
-            myMapGeneration.MapRadius = 10;
+            MapGeneration mapGeneration = gameObject.AddComponent<MapGeneration>();
+            mapGeneration.HexagonPrefab = hexGO;
+            mapGeneration.MapRadius = 10;
 
             //generate map
-            myMapGeneration.Initialise();
+            mapGeneration.HexDict = new Dictionary<Vector3Int, IHexagon>();
+            mapGeneration.GenerateMap();
+            mapGeneration.UpdateHexNeighbours();
+            mapGeneration.ConnectContentsToHex();
 
             //get random hex
             Vector3Int coords = new Vector3Int(-3, 2, 1);
-            IHexagon hex = (IHexagon)myMapGeneration.HexDict[coords];
+            IHexagon hex = (IHexagon)mapGeneration.HexDict[coords];
 
             //manually calculate its neighbours
-            List<Vector3Int> directions = myMapGeneration.GetDirections();
+            List<Vector3Int> directions = mapGeneration.GetDirections();
             List<IHexagon> neighbours = new List<IHexagon>();
             foreach(Vector3Int direction in directions)
             {
-                neighbours.Add(myMapGeneration.HexDict[coords + direction]);
+                neighbours.Add(mapGeneration.HexDict[coords + direction]);
             }
 
             //ASSERT
-            Assert.AreEqual(neighbours, hex.Neighbours);
+            Assert.AreEqual(neighbours, hex.MyHexMap.Neighbours);
         }
     }
 }

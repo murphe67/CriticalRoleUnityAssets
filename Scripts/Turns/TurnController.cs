@@ -16,8 +16,22 @@ namespace CriticalRole.Turns
 
     public interface ITurnController
     {
+        /// <summary>
+        /// DependancyManager only. Initialises the StartTurn List. <para/>
+        /// So other systems can add themselves to it
+        /// </summary>
+        void Initialise();
+
+        /// <summary>
+        /// Called by DependancyManager. Starts the TurnChangover process
+        /// </summary>
+        void BeginGame();
+
         void TurnChangeover();
 
+        /// <summary>
+        /// Wrapper for StartTurnList.Add(), just to protect the actual list
+        /// </summary>
         void AddStartTurnEvent(IStartTurnEvent startTurnEvent);
     }
 
@@ -38,10 +52,17 @@ namespace CriticalRole.Turns
 
         private void Awake()
         {
+            _RegisterWithDependancyManager();
+        }
+
+        #region Implementation
+        private void _RegisterWithDependancyManager()
+        {
             GameObject dependancyGO = FindObjectOfType<DependancyManagerMarker>().gameObject;
             IBattleDependancyManager dependancyManager = dependancyGO.GetComponent<IBattleDependancyManager>();
             dependancyManager.RegisterTurnController(this);
         }
+        #endregion
 
         #endregion
 
@@ -61,51 +82,20 @@ namespace CriticalRole.Turns
         /// </summary>
         public void Initialise()
         {
-            BuildTurnList();
+            _BuildTurnList();
             StartTurnEvents = new List<IStartTurnEvent>();
-
-            Hideable[] hideables = FindObjectsOfType<Hideable>();
-            foreach(Hideable hideable in hideables)
-            {
-                hideable.Initialise();
-            }
         }
 
         /// <summary>
         /// Sorted Initiative Order
         /// </summary>
         public List<ITurnSort> TurnList;
-
         public List<IStartTurnEvent> StartTurnEvents;
 
-        #endregion
-        //----------------------------------------------------------------------------
-        //             AddStartTurnEvent
-        //----------------------------------------------------------------------------
-
-        public void AddStartTurnEvent(IStartTurnEvent startTurnEvent)
+        #region Implementation
+        private void _BuildTurnList()
         {
-            StartTurnEvents.Add(startTurnEvent);
-        }
-
-        //----------------------------------------------------------------------------
-        //             BeginGame
-        //----------------------------------------------------------------------------
-
-        public void BeginGame()
-        {
-            StartTurnEvents.Sort(new StartTurnSort());
-            TurnChangeover();
-        }
-
-
-        //----------------------------------------------------------------------------
-        //             BuildTurnList
-        //---------------------------------------------------------------------------
-
-        public void BuildTurnList()
-        {
-            HasTurnMarker[] TurnMarkerArray = GameObject.FindObjectsOfType<HasTurnMarker>();
+            HasTurnMarker[] TurnMarkerArray = FindObjectsOfType<HasTurnMarker>();
             TurnList = new List<ITurnSort>();
 
             HasTurnMaxIndex = -1;
@@ -120,12 +110,53 @@ namespace CriticalRole.Turns
             TurnList.Sort();
             CurrentTurn = -1;
         }
+        #endregion
+
+        #endregion
+
+
+
+
 
         //----------------------------------------------------------------------------
-        //             UpdateCameraTurn
+        //             AddStartTurnEvent
+        //----------------------------------------------------------------------------
+
+        #region AddStartTurnEvent
+        public void AddStartTurnEvent(IStartTurnEvent startTurnEvent)
+        {
+            StartTurnEvents.Add(startTurnEvent);
+        }
+
+        #endregion
+
+
+
+        //----------------------------------------------------------------------------
+        //             BeginGame
+        //----------------------------------------------------------------------------
+
+        #region BeginGame
+        public void BeginGame()
+        {
+            StartTurnEvents.Sort(new StartTurnSort());
+            TurnChangeover();
+        }
+
+        #endregion
+
+
+
+
+        //----------------------------------------------------------------------------
+        //             UpdateCurrentTurn
         //----------------------------------------------------------------------------
 
         #region UpdateCurrentTurn
+
+        /// <summary>
+        /// Incrememnt CurrentTurn, if out of bounds, set to 0
+        /// </summary>
         public void UpdateCurrentTurn()
         {
             CurrentTurn++;
@@ -138,13 +169,11 @@ namespace CriticalRole.Turns
         /// <summary>
         /// Last initiative order index
         /// </summary>
-        [HideInInspector]
         public int HasTurnMaxIndex;
 
         /// <summary>
         /// current initiative order index
         /// </summary>
-        [HideInInspector]
         public int CurrentTurn;
 
         #endregion
@@ -178,10 +207,6 @@ namespace CriticalRole.Turns
 
 
         #endregion
-        /// <summary>
-        /// Increase the initiative order index. If it is out of bounds, go back to the beginning
-        /// </summary>
-        /// 
 
 
 

@@ -32,21 +32,18 @@ namespace CriticalRole.BattleCamera
 
         void ZoomTo(float zoom);
 
-        GameObject CamGameObject { get; }
+        void SetActive(bool isActive);
     }
+
+
+
+
+
 
     public class BattleCamController : MonoBehaviour, IBattleCamController
     {
 
         public IBattleCamInput MyBattleCamInput { get; set; }
-
-        public GameObject CamGameObject
-        {
-            get
-            {
-                return gameObject;
-            }
-        }
 
         //----------------------------------------------------------------------------
         //                    Initialisation
@@ -100,6 +97,9 @@ namespace CriticalRole.BattleCamera
 
         #endregion
 
+
+
+
         //----------------------------------------------------------------------------
         //                    Frame to Frame Change
         //----------------------------------------------------------------------------
@@ -129,6 +129,8 @@ namespace CriticalRole.BattleCamera
         }
 
         #endregion
+
+
 
         //----------------------------------------------------------------------------
         //                    Zoom
@@ -250,6 +252,9 @@ namespace CriticalRole.BattleCamera
 
         #endregion
 
+
+
+
         //----------------------------------------------------------------------------
         //                    Rotate
         //----------------------------------------------------------------------------
@@ -279,6 +284,10 @@ namespace CriticalRole.BattleCamera
         public readonly float DefaultRotationSpeed = 100f;
 
         #endregion
+
+
+
+
 
         //----------------------------------------------------------------------------
         //                    Translate
@@ -332,6 +341,11 @@ namespace CriticalRole.BattleCamera
 
         #endregion
 
+
+
+
+
+
         //----------------------------------------------------------------------------
         //                    Interpolation
         //----------------------------------------------------------------------------
@@ -341,6 +355,9 @@ namespace CriticalRole.BattleCamera
             FocusLerped.position = Vector3.Lerp(FocusLerped.position, FocusControlled.position, Time.deltaTime * 8);
             FocusLerped.rotation = Quaternion.Lerp(FocusLerped.rotation, FocusControlled.rotation, Time.deltaTime * 8);
         }
+
+
+
 
         //----------------------------------------------------------------------------
         //                    Camera Applied Movement
@@ -367,6 +384,10 @@ namespace CriticalRole.BattleCamera
             CameraLerped.rotation = Quaternion.Lerp(CameraLerped.rotation, CameraLookAt.rotation, 0.9f);
         }
 
+
+
+
+
         //----------------------------------------------------------------------------
         //                    JumpTo
         //----------------------------------------------------------------------------
@@ -378,6 +399,10 @@ namespace CriticalRole.BattleCamera
             FocusLerped.position = new Vector3(x, y, z);
         }
 
+
+
+
+
         //----------------------------------------------------------------------------
         //                    ZoomTo
         //----------------------------------------------------------------------------
@@ -387,6 +412,17 @@ namespace CriticalRole.BattleCamera
             zoom = Mathf.Clamp(zoom, MinimumZoom, MaximumZoom);
             ZoomLerped = zoom;
             ZoomControlled = zoom;
+        }
+
+
+
+        //----------------------------------------------------------------------------
+        //                    ZoomTo
+        //----------------------------------------------------------------------------
+
+        public void SetActive(bool isActive)
+        {
+            gameObject.SetActive(isActive);
         }
 
     }

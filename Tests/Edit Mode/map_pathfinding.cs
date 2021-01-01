@@ -16,7 +16,10 @@ namespace Tests
             mapGeneration.HexagonPrefab = new GameObject();
             mapGeneration.MapRadius = 10;
 
-            mapGeneration.Initialise();
+            mapGeneration.HexDict = new Dictionary<Vector3Int, IHexagon>();
+            mapGeneration.GenerateMap();
+            mapGeneration.UpdateHexNeighbours();
+            mapGeneration.ConnectContentsToHex();
 
             IHexagon start_hex = mapGeneration.HexDict[new Vector3Int(0, 0, 0)];
             IHexagon end_hex = mapGeneration.HexDict[new Vector3Int(0, -4, 4)];
@@ -43,16 +46,19 @@ namespace Tests
             mapGeneration.HexagonPrefab = new GameObject();
             mapGeneration.MapRadius = 10;
 
-            mapGeneration.Initialise();
+            mapGeneration.HexDict = new Dictionary<Vector3Int, IHexagon>();
+            mapGeneration.GenerateMap();
+            mapGeneration.UpdateHexNeighbours();
+            mapGeneration.ConnectContentsToHex();
 
             IHexagon startHex = mapGeneration.HexDict[new Vector3Int(0, 0, 0)];
 
             MapPathfinding mapPathfinding = new MapPathfinding();
-            List<IHexagon> hexesInRange = mapPathfinding.GetHexesInRange(startHex, 1);
+            HashSet<IHexagon> hexesInRange = mapPathfinding.GetHexesInRange(startHex, 1);
 
-            List<IHexagon> neighboursAndStart = startHex.Neighbours;
+            HashSet<IHexagon> neighboursAndStart = startHex.MyHexMap.Neighbours;
             neighboursAndStart.Add(startHex);
-            foreach(IHexagon neighbour in startHex.Neighbours)
+            foreach(IHexagon neighbour in startHex.MyHexMap.Neighbours)
             {
                 Assert.IsTrue(hexesInRange.Contains(neighbour));
             }

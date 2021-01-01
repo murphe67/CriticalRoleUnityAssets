@@ -178,7 +178,7 @@ public class PathValue : IPathValue
         }
         else
         {
-            return Vec3IntExt.Vec3IntCompare(a.Hex.CoOrds, b.Hex.CoOrds);
+            return Vec3IntExt.Vec3IntCompare(a.Hex.MyHexMap.CoOrds, b.Hex.MyHexMap.CoOrds);
         }
     }
     #endregion

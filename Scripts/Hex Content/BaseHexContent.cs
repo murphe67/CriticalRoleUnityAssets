@@ -21,8 +21,8 @@ using UnityEngine;
 //
 // which will obviously be interpretted differently for objects vs characters
 
-[RequireComponent(typeof(IHexContentMarker))]
-public class BaseHexContent : MonoBehaviour , IHexContents
+[RequireComponent(typeof(IContentMarker))]
+public class BaseHexContent : MonoBehaviour , IContents
 {
     public Transform ContentTransform { 
         get

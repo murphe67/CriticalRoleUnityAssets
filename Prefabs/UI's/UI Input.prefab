@@ -166,6 +166,8 @@ GameObject:
   m_Component:
   - component: {fileID: 2898558487695038383}
   - component: {fileID: 2898558487695038385}
+  - component: {fileID: -336750945212930373}
+  - component: {fileID: -4910547592816527606}
   m_Layer: 0
   m_Name: UI Input
   m_TagString: Untagged
@@ -202,8 +204,35 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   TurnUICanvas: {fileID: 6465406471117958708}
-  MoveUICanvas: {fileID: 3984644752816555896}
+  BackButtonCanvas: {fileID: 3984644752816555896}
+  UICanvases: []
+--- !u!114 &-336750945212930373
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2898558487695038384}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 94ab6d9676731ca4291c5e8d6ab0a600, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  MyUI_Input: {fileID: 0}
   SelectMove: 0
+--- !u!114 &-4910547592816527606
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2898558487695038384}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f08317a70a5c4d848a4ae8e4b21d5179, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  MyUI_Input: {fileID: 0}
 --- !u!1 &3514038581989261139
 GameObject:
   m_ObjectHideFlags: 0

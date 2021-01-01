@@ -21,7 +21,7 @@ using UnityEngine;
 public interface IMapPathfinding
 {
     MapPath GeneratePath(IHexagon hex_a, IHexagon hex_b);
-    List<IHexagon> GetHexesInRange(IHexagon start, int range);
+    HashSet<IHexagon> GetHexesInRange(IHexagon start, int range);
 }
 
 
@@ -57,18 +57,18 @@ public class MapPathfinding : IMapPathfinding
             IHexagon currentHex = currentPath.Hex;
 
 
-            if (currentHex.CoOrds == hex_b.CoOrds)
+            if (currentHex.MyHexMap.CoOrds == hex_b.MyHexMap.CoOrds)
             {
                 return currentPath.ReconstructPath();
             }
 
 
-            foreach (IHexagon neighbour in currentHex.Neighbours)
+            foreach (IHexagon neighbour in currentHex.MyHexMap.Neighbours)
             {
-                if(!neighbour.IsOccupied())
+                if(!neighbour.MyHexMap.IsOccupied())
                 {
                     IPathValue neighbourPath = GetPathValue(neighbour);
-                    int newGScore = currentPath.Score_g + neighbour.MovementCost;
+                    int newGScore = currentPath.Score_g + neighbour.MyHexMap.MovementCost;
                     if (newGScore < neighbourPath.Score_g)
                     {
                         if (openSet.Contains(neighbourPath))
@@ -114,10 +114,10 @@ public class MapPathfinding : IMapPathfinding
     /// 
     /// So in practice it is Dijkstra's out until range
     /// </summary>
-    public List<IHexagon> GetHexesInRange(IHexagon start, int range)
+    public HashSet<IHexagon> GetHexesInRange(IHexagon start, int range)
     {
         SortedSet<IPathValue> openSet = new SortedSet<IPathValue>();
-        List<IHexagon> hexesInRange = new List<IHexagon>();
+        HashSet<IHexagon> hexesInRange = new HashSet<IHexagon>();
         PathValueDict = new Dictionary<IHexagon, IPathValue>();
 
         Destination = start;
@@ -135,12 +135,12 @@ public class MapPathfinding : IMapPathfinding
             IHexagon currentHex = currentPath.Hex;
             hexesInRange.Add(currentHex);
 
-            foreach (IHexagon neighbour in currentHex.Neighbours)
+            foreach (IHexagon neighbour in currentHex.MyHexMap.Neighbours)
             {
-                if (!neighbour.IsOccupied())
+                if (!neighbour.MyHexMap.IsOccupied())
                 {
                     IPathValue neighbourPath = GetPathValue(neighbour);
-                    int newGScore = currentPath.Score_g + neighbour.MovementCost;
+                    int newGScore = currentPath.Score_g + neighbour.MyHexMap.MovementCost;
                     if (newGScore < neighbourPath.Score_g && newGScore <= range)
                     {
                         if (openSet.Contains(neighbourPath))
@@ -155,9 +155,8 @@ public class MapPathfinding : IMapPathfinding
             }          
         }
         return hexesInRange;
-
-
     }
+
 
     //----------------------------------------------------------------------------
     //              Get Path Value

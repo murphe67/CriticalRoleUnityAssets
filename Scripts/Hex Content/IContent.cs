@@ -12,7 +12,7 @@ using UnityEngine;
 /// <summary>
 /// 
 /// </summary>
-public interface IHexContents
+public interface IContents
 {
     Transform ContentTransform { get; }
 

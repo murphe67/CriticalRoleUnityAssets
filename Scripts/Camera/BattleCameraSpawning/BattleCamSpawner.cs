@@ -62,18 +62,17 @@ namespace CriticalRole.BattleCamera
             return MyBattleCameraController;
         }
 
+
         /// <summary>
         /// How high off the ground is the camera. <para/>
         /// Used by both SpawnFocus's
         /// </summary>
         public float FocusHeight;
-
         /// <summary>
         /// Prefab to set up camera, audio listener and raycaster <para/>
         /// Used by spawnCameraLerped.
         /// </summary>
         public GameObject CameraPrefab;
-
         /// <summary>
         /// Used by SpawnInput 
         /// </summary>
@@ -106,7 +105,6 @@ namespace CriticalRole.BattleCamera
         /// Added through new by SpawnCameraController
         /// </summary>
         GameObject BattleCamera;
-
         /// <summary>
         /// BattleCameraController component that is being spawned. <para/>
         /// Added through AddComponent to BattleCamera by SpawnCameraController

@@ -4,48 +4,53 @@ using UnityEngine;
 using CriticalRole.BattleCamera;
 using CriticalRole.Turns;
 
-public class Hideable : MonoBehaviour, IStartTurnEvent
-{ 
+//----------------------------------------------------------------------------
+//             Class Description
+//----------------------------------------------------------------------------
+//
+// Add this component to any mesh that could block the camera view
+// Then add a trigger setup (collider + rigidbody)
+//
+// When the camera enters the collider, the mesh will vanish, but still cast shadows
+//
+// Is also connected to the BattleCamManager, because cameras are simply disabled
+// when a camera transition happens, so the meshes have to be manually reenabled
+// when the camera switch
+
+public class Hideable : MonoBehaviour
+{
+    //----------------------------------------------------------------------------
+    //             Initialise
+    //----------------------------------------------------------------------------
+
+    #region Initialise
+
     public void Initialise()
     {
         myMaterial = GetComponent<MeshRenderer>().material;
-        myRenderer = GetComponent<MeshRenderer>();
-
-        TurnControllerMarker[] turnControllerMarkers = FindObjectsOfType<TurnControllerMarker>();
-        foreach (TurnControllerMarker turnControllerMarker in turnControllerMarkers)
-        {
-            turnControllerMarker.GetComponent<ITurnController>().AddStartTurnEvent(this);
-        }
     }
-
-    public StartTurnType MyStartTurnType
-    {
-        get
-        {
-            return StartTurnType.HideEvent;
-        }
-    }
-
-    public IEnumerator StartTurn(IHasTurn hasTurn)
-    {
-        StartCoroutine(ShowCoroutine());
-        yield break;
-    }
-
 
     Material myMaterial;
-    MeshRenderer myRenderer;
+
+    #endregion
+
+
+
+
+    //----------------------------------------------------------------------------
+    //             Trigger Functions
+    //----------------------------------------------------------------------------
+
+    #region Trigger Functions
 
     private void OnTriggerEnter(Collider other)
     {
-        
         other.gameObject.TryGetComponent(out Camera camera);
         if(camera != null)
         {
             StopAllCoroutines();
             StartCoroutine(HideCoroutine());
         }
-       
     }
 
     private void OnTriggerExit(Collider other)
@@ -53,10 +58,21 @@ public class Hideable : MonoBehaviour, IStartTurnEvent
         other.gameObject.TryGetComponent(out Camera camera);
         if (camera != null)
         {
+            StopAllCoroutines();
             StartCoroutine(ShowCoroutine());
         }
     }
 
+    #endregion
+
+
+
+
+    //----------------------------------------------------------------------------
+    //             Hide/Show
+    //----------------------------------------------------------------------------
+
+    #region Hide/Show
     public IEnumerator HideCoroutine()
     {
         StandardShaderUtils.ChangeRenderMode(myMaterial, StandardShaderUtils.BlendMode.Fade);
@@ -85,4 +101,9 @@ public class Hideable : MonoBehaviour, IStartTurnEvent
         myMaterial.color = color;
         StandardShaderUtils.ChangeRenderMode(myMaterial, StandardShaderUtils.BlendMode.Opaque);
     }
+
+    #endregion
+
+
+
 }

@@ -32,10 +32,10 @@ using CriticalRole.UI;
 
 public interface IBattleDependancyManager
 {
-    void RegisterMapGeneration(MapGeneration mapGeneration);
-    void RegisterUI_Input(UI_Input ui_Input);
-    void RegisterTurnController(TurnController turnController);
-    void RegisterCameraManager(BattleCamManager myBattleCameraManager);
+    void RegisterMapGeneration(IMapGeneration mapGeneration);
+    void RegisterUIManager(I_UIManager uiManager);
+    void RegisterTurnController(ITurnController turnController);
+    void RegisterCameraManager(IBattleCamManager myBattleCameraManager);
 }
 
 
@@ -55,41 +55,41 @@ public class BattleDependancyManager : MonoBehaviour, IBattleDependancyManager
     /// Called by MapGeneration to register itself as THE MapGeneration <para />
     /// If there are two, the first is completely ignored
     /// </summary>
-    public void RegisterMapGeneration(MapGeneration mapGeneration)
+    public void RegisterMapGeneration(IMapGeneration mapGeneration)
     {
         MyMapGeneration = mapGeneration;
     }
 
-    MapGeneration MyMapGeneration;
+    IMapGeneration MyMapGeneration;
 
     /// <summary>
     /// Called by UI_Input to register itself as THE UI_Input <para />
     /// If there are two, the first is completely ignored
     /// </summary>
-    public void RegisterUI_Input(UI_Input ui_Input)
+    public void RegisterUIManager(I_UIManager uiManager)
     {
-        MyUI_Input = ui_Input; 
+        MyUIManager = uiManager; 
     }
 
-    UI_Input MyUI_Input;
+    I_UIManager MyUIManager;
 
     /// <summary>
     /// Called by TurnController to register itself as THE TurnController <para />
     /// If there are two, the first is completely ignored
     /// </summary>
-    public void RegisterTurnController(TurnController turnController)
+    public void RegisterTurnController(ITurnController turnController)
     {
         MyTurnController = turnController;
     }
 
-    TurnController MyTurnController;
+    ITurnController MyTurnController;
 
-    public void RegisterCameraManager(BattleCamManager myBattleCameraManager)
+    public void RegisterCameraManager(IBattleCamManager myBattleCameraManager)
     {
         MyBattleCameraManager = myBattleCameraManager;
     }
 
-    BattleCamManager MyBattleCameraManager;
+    IBattleCamManager MyBattleCameraManager;
 
     #endregion
 
@@ -110,15 +110,19 @@ public class BattleDependancyManager : MonoBehaviour, IBattleDependancyManager
     //
     // UI_Input works better as placed in the scene, as the UI needs to register button functions
     // to it, so it should exist before runtime
+
+   
     private void Start()
     {
         MyMapGeneration.Initialise();
         MyTurnController.Initialise();
-        MyUI_Input.Initialise();
+        MyUIManager.Initialise();
         MyBattleCameraManager.Initialise();
 
         MyTurnController.BeginGame();
     }
+  
+
 
     #endregion
 

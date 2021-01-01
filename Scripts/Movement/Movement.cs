@@ -80,7 +80,6 @@ namespace CriticalRole.Move
             ContentTransform = MyHasTurn.MyHexContents.ContentTransform;
             Path = path;
             StopAllCoroutines();
-            Debug.Log("move");
 
             RemoveStartLocationFromPath();
 
@@ -148,7 +147,7 @@ namespace CriticalRole.Move
 
             MoveInReferences();
 
-            MyHasTurn.MyHasSpeed.UseMove(NextHex.MovementCost);
+            MyHasTurn.MyHasSpeed.UseMove(NextHex.MyHexMap.MovementCost);
 
             yield return StartCoroutine(MoveTransform());
         }

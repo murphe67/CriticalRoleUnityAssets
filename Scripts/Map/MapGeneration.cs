@@ -7,6 +7,8 @@ public interface IMapGeneration
     /// Dictionary of the hexagons of the map, with the coords as the key
     /// </summary>
     Dictionary<Vector3Int, IHexagon> HexDict { get; }
+
+    void Initialise();
 }
 
 //----------------------------------------------------------------------------
@@ -57,19 +59,24 @@ public class MapGeneration : MonoBehaviour, IMapGeneration
 
     #endregion
 
-    //----------------------------------------------------------------------------
-    //             Initialise
-    //----------------------------------------------------------------------------
-
-    #region Initialise
 
     void Awake()
+    {
+        _RegisterWithDependancyManager();
+    }
+
+    private void _RegisterWithDependancyManager()
     {
         GameObject dependancyGO = FindObjectOfType<DependancyManagerMarker>().gameObject;
         IBattleDependancyManager dependancyManager = dependancyGO.GetComponent<IBattleDependancyManager>();
         dependancyManager.RegisterMapGeneration(this);
     }
 
+    //----------------------------------------------------------------------------
+    //             Initialise
+    //----------------------------------------------------------------------------
+
+    #region Initialise
 
     /// <summary>
     /// UI_Input is dependant on MapGeneration's initialise <para />
@@ -88,7 +95,7 @@ public class MapGeneration : MonoBehaviour, IMapGeneration
         ConnectContentsToHex();
     }
 
-    #endregion
+    #region Implementation
 
     //----------------------------------------------------------------------------
     //            Generate Map
@@ -107,32 +114,67 @@ public class MapGeneration : MonoBehaviour, IMapGeneration
            for(int y = Mathf.Max(-MapRadius, (-x - MapRadius)); y <= Mathf.Min(MapRadius, MapRadius - x); y++)
             {
                 int z = -x - y;
-                InstantiateHexagon(new Vector3Int(x, y, z));
+                _InstantiateHexagon(new Vector3Int(x, y, z));
             }
         }
     }
 
-    public void InstantiateHexagon(Vector3Int coords)
-    {
-        float x_loc = 0, z_loc = 0;
-        x_loc += coords.x * 0.75f;
-        z_loc += coords.y * 0.433f;
-        z_loc -= coords.z * 0.433f;
+    #region Implementation
 
-        GameObject HexagonGO = Instantiate(HexagonPrefab, new Vector3(x_loc, 0, z_loc), Quaternion.identity, gameObject.transform);
+    private void _InstantiateHexagon(Vector3Int coords)
+    {
+        Vector3 worldSpacePos = HexMath.HexCoordsToWorldSpace(coords);
+
+        GameObject HexagonGO = Instantiate(HexagonPrefab, worldSpacePos, Quaternion.identity, gameObject.transform);
         HexagonGO.name = "Hex " + coords.ToString();
 
         Hexagon hexagon = HexagonGO.AddComponent<Hexagon>();
         hexagon.Initialise(coords, 1);
+
         HexDict.Add(coords, hexagon);
     }
 
+    #endregion
 
 
     #endregion
 
+
     //----------------------------------------------------------------------------
-    //           Neighbours
+    //          ConfigureTerrain
+    //----------------------------------------------------------------------------
+
+    #region Configure Terrain
+    void ConfigureTerrain()
+    {
+        TerrainMarker[] terrainArray = FindObjectsOfType<TerrainMarker>();
+        foreach (TerrainMarker terrainMarker in terrainArray)
+        {
+            terrainMarker.gameObject.GetComponent<ITerrain>().Configure();
+        }
+
+        List<Vector3Int> destroyedHexes = new List<Vector3Int>();
+
+        foreach (KeyValuePair<Vector3Int, IHexagon> hex in HexDict)
+        {
+            if (((IHexagonRestricted)(hex.Value)).MyHexKeep.RemoveUnused())
+            {
+                destroyedHexes.Add(hex.Key);
+            }
+        }
+
+        foreach (Vector3Int coords in destroyedHexes)
+        {
+            HexDict.Remove(coords);
+        }
+
+    }
+
+    #endregion
+
+
+    //----------------------------------------------------------------------------
+    //           UpdateHexNeighbours
     //----------------------------------------------------------------------------
 
     #region UpdateHexNeighbours
@@ -147,17 +189,17 @@ public class MapGeneration : MonoBehaviour, IMapGeneration
 
         foreach(KeyValuePair<Vector3Int, IHexagon> hex in HexDict)
         {
-            List<IHexagon> neighbours = new List<IHexagon>();
+            HashSet<IHexagon> neighbours = new HashSet<IHexagon>();
             foreach (Vector3Int direction in directions)
             {
-                Vector3Int neighbourCoords = hex.Value.CoOrds + direction;
+                Vector3Int neighbourCoords = hex.Value.MyHexMap.CoOrds + direction;
 
                 if (HexDict.ContainsKey(neighbourCoords))
                 {
                     neighbours.Add(HexDict[neighbourCoords]);
                 }
             }
-            ((IHexagonNeighbours)hex.Value).AddNeighbours(neighbours);
+            ((IHexagonRestricted)hex.Value).MyHexMapRestricted.SetNeighbours(neighbours);
         }
     }
 
@@ -183,7 +225,7 @@ public class MapGeneration : MonoBehaviour, IMapGeneration
     #endregion
     
     //----------------------------------------------------------------------------
-    //           Contents
+    //           ConnectContentsToHex
     //----------------------------------------------------------------------------
 
     #region ConnectContentsToHex
@@ -194,11 +236,11 @@ public class MapGeneration : MonoBehaviour, IMapGeneration
     /// </summary>
     public void ConnectContentsToHex()
     {
-        IHexContentMarker[] hexContentMarkers = GameObject.FindObjectsOfType<IHexContentMarker>();
-        foreach(IHexContentMarker hexContentMarker in hexContentMarkers)
+        IContentMarker[] hexContentMarkers = GameObject.FindObjectsOfType<IContentMarker>();
+        foreach(IContentMarker hexContentMarker in hexContentMarkers)
         {
             GameObject go = hexContentMarker.gameObject;
-            IHexContents contents = go.GetComponent<IHexContents>();
+            IContents contents = go.GetComponent<IContents>();
 
             //object told about hex
             contents.Location = HexDict[HexMath.CalculateHexCoords(contents.ContentTransform.position)];
@@ -206,38 +248,21 @@ public class MapGeneration : MonoBehaviour, IMapGeneration
             contents.Location.Contents = contents;
 
             //Move the object to the centre of the hex
-            contents.ContentTransform.position = contents.Location.HexTransform.position;
+            contents.ContentTransform.position = HexMath.HexCoordsToWorldSpace(contents.Location.MyHexMap.CoOrds);
         }
     }
 
     #endregion
 
-    //----------------------------------------------------------------------------
-    //          ConfigureTerrain
-    //----------------------------------------------------------------------------
 
-    void ConfigureTerrain()
-    {
-        TerrainMarker[] terrainArray = FindObjectsOfType<TerrainMarker>();
-        foreach(TerrainMarker terrainMarker in terrainArray)
-        {
-            terrainMarker.gameObject.GetComponent<ITerrain>().Configure();
-        }
 
-        List<Vector3Int> destroyedHexes = new List<Vector3Int>();
 
-        foreach(KeyValuePair<Vector3Int, IHexagon> hex in HexDict)
-        {
-            if(hex.Value.RemoveUnused())
-            {
-                destroyedHexes.Add(hex.Key);
-            }
-        }
 
-        foreach(Vector3Int coords in destroyedHexes)
-        {
-            HexDict.Remove(coords);
-        }
+    #endregion
 
-    }
+
+
+
+    #endregion
+
 }

@@ -4,7 +4,7 @@ public interface IHasTurn
 {
     ITurnSort TurnSort { get; }
 
-    IHexContents MyHexContents { get; }
+    IContents MyHexContents { get; }
 
     IHasSpeed MyHasSpeed { get; }
 
@@ -15,4 +15,6 @@ public interface IHasTurn
     void EndTurn();
 
     void EndMove();
+
+    void EndAttack();
 }

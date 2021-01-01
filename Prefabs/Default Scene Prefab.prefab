@@ -258,6 +258,8 @@ MonoBehaviour:
   CameraPrefab: {fileID: 4011249659782909562, guid: b52e5ed3c287f0a43a1498446f74e5fe,
     type: 3}
   FocusHeight: 0.8
+  Crossfade: {fileID: 0}
+  Hideables: []
 --- !u!1 &6186961648860429844
 GameObject:
   m_ObjectHideFlags: 0

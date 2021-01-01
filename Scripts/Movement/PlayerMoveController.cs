@@ -101,6 +101,7 @@ namespace CriticalRole.Move
             foreach (IHexagon hex in HexesInRange)
             {
                 hex.Interaction.MakeSelectable();
+                hex.Interaction.ChangeColor(Color.red);
             }
         }
 
@@ -110,7 +111,7 @@ namespace CriticalRole.Move
         /// </summary>
         public IHasTurn CurrentIHasTurn;
 
-        List<IHexagon> HexesInRange;
+        HashSet<IHexagon> HexesInRange;
 
         public void HighlightPath(IHexagon ihexagon)
         {
@@ -118,7 +119,7 @@ namespace CriticalRole.Move
             path.PathStack.Pop();
             foreach (IHexagon hex in HexesInRange)
             {
-                hex.Interaction.Unhighlight();
+                hex.Interaction.ChangeColor(Color.red);
             }
 
             MyMovement.LookAtHexHover(path.PathStack.Peek(), CurrentIHasTurn.MyHexContents.ContentTransform);
@@ -126,7 +127,7 @@ namespace CriticalRole.Move
             while (path.PathStack.Count != 0)
             {
                 IHexagon toHighlight = path.PathStack.Pop();
-                toHighlight.Interaction.Highlight();
+                toHighlight.Interaction.ChangeColor(Color.blue);
             }
 
             

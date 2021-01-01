@@ -27,10 +27,10 @@ namespace CriticalRole.Turns
         public void Initialise(ITurnController turnController)
         {
             MyTurnController = turnController;
-            MyHexContents = GetComponent<IHexContents>();
+            MyHexContents = GetComponent<IContents>();
             MyHasSpeed = GetComponent<IHasSpeed>();
 
-            TurnSort = new BaseTurnSort(Random.Range(0, 10), Random.Range(0, 10), MyHexContents.Location.CoOrds, this);
+            TurnSort = new BaseTurnSort(Random.Range(0, 10), Random.Range(0, 10), MyHexContents.Location.MyHexMap.CoOrds, this);
         }
 
 
@@ -43,7 +43,7 @@ namespace CriticalRole.Turns
         /// Reference to contents as initiative order uses coords as fallback <para/>
         /// In perfectly matched initiative
         /// </summary>
-        public IHexContents MyHexContents { get; set; }
+        public IContents MyHexContents { get; set; }
 
         public IHasSpeed MyHasSpeed { get; set; }
 
@@ -55,12 +55,12 @@ namespace CriticalRole.Turns
         /// This isn't anything more complex than a set function <para/>
         /// However makes the reference injection more explicit
         /// </summary>
-        public void SetUI_InputReference(UI_Input ui_input)
+        public void SetUI_InputReference(UIManager ui_input)
         {
-            MyUI_Input = ui_input;
+            MyUIManager = ui_input;
         }
 
-        public UI_Input MyUI_Input { get; private set; }
+        public UIManager MyUIManager { get; private set; }
 
         //----------------------------------------------------------------------------
         //             Start Turn
@@ -72,7 +72,7 @@ namespace CriticalRole.Turns
         /// </summary>
         public void StartTurn()
         {
-            MyUI_Input.StartTurn(this);
+            MyUIManager.StartTurn(this);
             Debug.Log("Start Turn: " + gameObject.name);
             MyHasSpeed.RefreshMovement();
         }
@@ -102,7 +102,12 @@ namespace CriticalRole.Turns
         //----------------------------------------------------------------------------
         public void EndMove()
         {
-            MyUI_Input.ShowTurnUI();
+            MyUIManager.ShowTurnUI();
+        }
+
+        public void EndAttack()
+        {
+            MyUIManager.ShowTurnUI();
         }
 
     }

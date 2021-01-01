@@ -15,33 +15,29 @@ namespace CriticalRole.BattleCamera
             return -Input.mouseScrollDelta.y;
         }
 
+
+
+
+
         #region Rotation
 
+        /// <summary>
+        /// Needs to return a value between -1 and 1 for rotation speed <para/>
+        /// </summary>
+        /// <returns></returns>
         public float RotationInput()
         {
-            if (Input.GetMouseButtonDown(MouseKey))
-            {
-                MousePos = Input.mousePosition.x;
-            }
-            else if (Input.GetMouseButton(MouseKey))
-            {
-                float distance = (Input.mousePosition.x - MousePos);
-                float factor = 0f;
-                if (distance > RotationMinDelta)
-                {
-                    factor = RotationDefaultSpeed;
-                    factor += (3 * distance / Camera.main.pixelWidth) * (1 - RotationDefaultSpeed);
-                }
-                else if (distance < -RotationMinDelta)
-                {
-                    factor = -RotationDefaultSpeed;
-                    factor += (3 * distance / Camera.main.pixelWidth) * (1 - RotationDefaultSpeed);
-                }
-                factor = Mathf.Clamp(factor, -1f, 1f); ;
-                return factor;
-            }
-            return 0f;
+            _GetMouseDownPosition();
+
+            float distance = Input.mousePosition.x - MouseDownPos;
+            float factor = _CalcFactorFromDistance(distance);
+
+            return Mathf.Clamp(factor, -1f, 1f);
         }
+
+        #region Implementation
+
+        #region Variables
 
         /// <summary>
         /// Which mouse button to use to rotate <para />
@@ -52,7 +48,7 @@ namespace CriticalRole.BattleCamera
         /// <summary>
         /// Stores the x coord of where the mouse was when the mouse wheel was pressed
         /// </summary>
-        public float MousePos = 0;
+        public float MouseDownPos = 0;
 
         /// <summary>
         /// How far the mouse must move before rotation begins <para />
@@ -68,10 +64,54 @@ namespace CriticalRole.BattleCamera
 
         #endregion
 
+        private void _GetMouseDownPosition()
+        {
+            if (Input.GetMouseButtonDown(MouseKey))
+            {
+                MouseDownPos = Input.mousePosition.x;
+            }
+        }
+
+        private float _CalcFactorFromDistance(float distance)
+        {
+            float factor = 0;
+
+            if (Input.GetMouseButton(MouseKey))
+            {
+                if (distance > RotationMinDelta)
+                {
+                    factor = RotationDefaultSpeed;
+                    factor += (3 * distance / Camera.main.pixelWidth) * (1 - RotationDefaultSpeed);
+                }
+                else if (distance < -RotationMinDelta)
+                {
+                    factor = -RotationDefaultSpeed;
+                    factor += (3 * distance / Camera.main.pixelWidth) * (1 - RotationDefaultSpeed);
+                }
+            }
+
+            return factor;
+        }
+
+
+        #endregion
+        
+        #endregion
+
+
+
+
+
+
         public float TranslateForwardInput()
         {
             return Input.GetAxis("Vertical");
         }
+
+
+
+
+
 
         public float TranslateRightInput()
         {
