@@ -1,6 +1,8 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using CriticalRole.Map;
+using CriticalRole.Turns;
 
 namespace CriticalRole.Move
 {

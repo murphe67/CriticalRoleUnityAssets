@@ -17,22 +17,21 @@ namespace CriticalRole.BattleCamera
     //
     // Input comes through the IBattleCamInput interface
     //
-    // Trig zoom using mouse wheel, angle changes appropriately for up close/tactical
+    // Trigonometric zoom using mouse wheel, angle changes appropriately for up close/tactical
     //
     // Focus based translation and rotation, so you're moving and rotating around
     // the spot you're looking at
     //
     // All movement is lerped to be responsive + smooth
+    //
+    // BattleCamTransform subclass replicates Transform functionality
 
     public interface IBattleCamController
     {
         IBattleCamInput MyBattleCamInput { get; }
 
-        void JumpTo(float x, float z);
+        IBattleCamTransform MyBattleCamTransform { get; }
 
-        void ZoomTo(float zoom);
-
-        void SetActive(bool isActive);
     }
 
 
@@ -44,6 +43,16 @@ namespace CriticalRole.BattleCamera
     {
 
         public IBattleCamInput MyBattleCamInput { get; set; }
+
+        public IBattleCamTransform MyBattleCamTransform { get; set; }
+
+        public Vector3 Position
+        {
+            get
+            {
+                return gameObject.transform.position;
+            }
+        }
 
         //----------------------------------------------------------------------------
         //                    Initialisation
@@ -62,7 +71,7 @@ namespace CriticalRole.BattleCamera
             FocusControlled = focusControlled.transform;
             FocusLerped = focusLerped.transform;
 
-
+            MyBattleCamTransform = new BattleCamTransform(this);
         }
 
         //These 4 variables must be spawned and set by BattleCameraSpawner
@@ -184,7 +193,7 @@ namespace CriticalRole.BattleCamera
         /// The closest the camera can get to the camera focus <para />
         /// Originally set to 2
         /// </summary>
-        public readonly float MinimumZoom = 2f;
+        public readonly float MinimumZoom = 1f;
 
         /// <summary>
         /// The furthest the camera can get from the camera focus <para />
@@ -350,19 +359,21 @@ namespace CriticalRole.BattleCamera
         //                    Interpolation
         //----------------------------------------------------------------------------
 
+        #region LerpToFocus
         public void LerpToFocus()
         {
             FocusLerped.position = Vector3.Lerp(FocusLerped.position, FocusControlled.position, Time.deltaTime * 8);
             FocusLerped.rotation = Quaternion.Lerp(FocusLerped.rotation, FocusControlled.rotation, Time.deltaTime * 8);
         }
 
-
+        #endregion
 
 
         //----------------------------------------------------------------------------
-        //                    Camera Applied Movement
+        //                    MoveCamera
         //----------------------------------------------------------------------------
 
+        #region MoveCamera
         /// <summary>
         /// This function properly connects the camera to FocusLerped <para />
         /// 
@@ -383,47 +394,12 @@ namespace CriticalRole.BattleCamera
             CameraLookAt.LookAt(FocusLerped);
             CameraLerped.rotation = Quaternion.Lerp(CameraLerped.rotation, CameraLookAt.rotation, 0.9f);
         }
+        #endregion
 
 
 
 
 
-        //----------------------------------------------------------------------------
-        //                    JumpTo
-        //----------------------------------------------------------------------------
-
-        public void JumpTo(float x, float z)
-        {
-            float y = FocusControlled.position.y;
-            FocusControlled.position = new Vector3(x, y, z);
-            FocusLerped.position = new Vector3(x, y, z);
-        }
-
-
-
-
-
-        //----------------------------------------------------------------------------
-        //                    ZoomTo
-        //----------------------------------------------------------------------------
-
-        public void ZoomTo(float zoom)
-        {
-            zoom = Mathf.Clamp(zoom, MinimumZoom, MaximumZoom);
-            ZoomLerped = zoom;
-            ZoomControlled = zoom;
-        }
-
-
-
-        //----------------------------------------------------------------------------
-        //                    ZoomTo
-        //----------------------------------------------------------------------------
-
-        public void SetActive(bool isActive)
-        {
-            gameObject.SetActive(isActive);
-        }
 
     }
 }

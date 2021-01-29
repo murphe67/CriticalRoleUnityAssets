@@ -12,6 +12,10 @@ using UnityEngine;
 //
 //
 
-public class DependancyManagerMarker : MonoBehaviour
+namespace CriticalRole.Dependancy
 {
+    public class DependancyManagerMarker : MonoBehaviour
+    {
+    }
+
 }

@@ -1,20 +1,40 @@
-﻿using CriticalRole.Turns;
+﻿using CriticalRole.Contents;
+using CriticalRole.Attacking;
+using CriticalRole.Move;
+using CriticalRole.Character;
+using CriticalRole.Rolling;
 
-public interface IHasTurn
+namespace CriticalRole.Turns
 {
-    ITurnSort TurnSort { get; }
 
-    IContents MyHexContents { get; }
+    public interface IHasTurn
+    {
+        void Initialise(ITurnController turnController);
 
-    IHasSpeed MyHasSpeed { get; }
+        int Index { get; set; }
 
-    void Initialise(ITurnController turnController);
+        string Name { get; }
 
-    void StartTurn();
+        IContents MyHexContents { get; }
 
-    void EndTurn();
+        IHasSpeed MyHasSpeed { get; }
 
-    void EndMove();
+        IHasAttack MyHasAttack { get; }
 
-    void EndAttack();
+        IIsVictim MyIsVictim { get; }
+
+        IHasStats MyHasStats { get; }
+
+        IInitiativeRollData Initiative { get; }
+
+        void RegisterGeneralRoller(IGeneralRoller generalRoller);
+
+        void StartTurn(ActionEnum action, BonusActionEnum bonus, ReactionEnum reaction);
+
+        void EndTurn();
+
+        void EndMove();
+
+        void EndAttack();
+    }
 }

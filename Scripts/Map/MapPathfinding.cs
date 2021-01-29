@@ -2,184 +2,189 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-//----------------------------------------------------------------------------
-//              Class Description
-//----------------------------------------------------------------------------
-
-// Fairly boring bog-standard A* pathfinding class
-// 
-// Can be instanced wherever, passed 2 hexes and will return a MapPath that has
-// all the info about that path to allow UI and AI to easily understand specifics
-//
-// Interfaced through IMapPathFinding, two accessible functions
-//
-// Using MapPathfinding is reliant on MapGeneration, but is only going to be called
-// once the game has actually begun, so in practice is independant
-//
-// Can be instanced as many times as needed, wherever is needed
-
-public interface IMapPathfinding
-{
-    MapPath GeneratePath(IHexagon hex_a, IHexagon hex_b);
-    HashSet<IHexagon> GetHexesInRange(IHexagon start, int range);
-}
-
-
-public class MapPathfinding : IMapPathfinding
+namespace CriticalRole.Map
 {
 
     //----------------------------------------------------------------------------
-    //              Generate Path
+    //              Class Description
     //----------------------------------------------------------------------------
 
-    #region GeneratePath
+    // Fairly boring bog-standard A* pathfinding class
+    // 
+    // Can be instanced wherever, passed 2 hexes and will return a MapPath that has
+    // all the info about that path to allow UI and AI to easily understand specifics
+    //
+    // Interfaced through IMapPathFinding, two accessible functions
+    //
+    // Using MapPathfinding is reliant on MapGeneration, but is only going to be called
+    // once the game has actually begun, so in practice is independant
+    //
+    // Can be instanced as many times as needed, wherever is needed
 
-    /// <summary>
-    /// Generic A* pathfinding, hex distance as heuristic
-    /// </summary>
-    public MapPath GeneratePath(IHexagon hex_a, IHexagon hex_b)
+    public interface IMapPathfinding
     {
-        SortedSet<IPathValue> openSet = new SortedSet<IPathValue>();
-        PathValueDict = new Dictionary<IHexagon, IPathValue>();
+        MapPath GeneratePath(IHexagon hex_a, IHexagon hex_b);
+        HashSet<IHexagon> GetHexesInRange(IHexagon start, int range);
+    }
 
-        Start = hex_a;
-        Destination = hex_b;
 
-        IPathValue firstPath = GetPathValue(hex_a);
-        firstPath.SetFirstPathDistance();
+    public class MapPathfinding : IMapPathfinding
+    {
 
-        openSet.Add(firstPath);
-        while (openSet.Count != 0)
+        //----------------------------------------------------------------------------
+        //              Generate Path
+        //----------------------------------------------------------------------------
+
+        #region GeneratePath
+
+        /// <summary>
+        /// Generic A* pathfinding, hex distance as heuristic
+        /// </summary>
+        public MapPath GeneratePath(IHexagon hex_a, IHexagon hex_b)
         {
-            IPathValue currentPath = openSet.Min;
-            openSet.Remove(currentPath);
+            SortedSet<IPathValue> openSet = new SortedSet<IPathValue>();
+            PathValueDict = new Dictionary<IHexagon, IPathValue>();
 
-            IHexagon currentHex = currentPath.Hex;
+            Start = hex_a;
+            Destination = hex_b;
 
+            IPathValue firstPath = GetPathValue(hex_a);
+            firstPath.SetFirstPathDistance();
 
-            if (currentHex.MyHexMap.CoOrds == hex_b.MyHexMap.CoOrds)
+            openSet.Add(firstPath);
+            while (openSet.Count != 0)
             {
-                return currentPath.ReconstructPath();
-            }
+                IPathValue currentPath = openSet.Min;
+                openSet.Remove(currentPath);
+
+                IHexagon currentHex = currentPath.Hex;
 
 
-            foreach (IHexagon neighbour in currentHex.MyHexMap.Neighbours)
-            {
-                if(!neighbour.MyHexMap.IsOccupied())
+                if (currentHex.MyHexMap.CoOrds == hex_b.MyHexMap.CoOrds)
                 {
-                    IPathValue neighbourPath = GetPathValue(neighbour);
-                    int newGScore = currentPath.Score_g + neighbour.MyHexMap.MovementCost;
-                    if (newGScore < neighbourPath.Score_g)
-                    {
-                        if (openSet.Contains(neighbourPath))
-                        {
-                            openSet.Remove(neighbourPath);
-                        }
+                    return currentPath.ReconstructPath();
+                }
 
-                        neighbourPath.UpdateValues(newGScore, currentPath);
-                        openSet.Add(neighbourPath);
+
+                foreach (IHexagon neighbour in currentHex.MyHexMap.Neighbours)
+                {
+                    if (!neighbour.MyHexMap.IsOccupied())
+                    {
+                        IPathValue neighbourPath = GetPathValue(neighbour);
+                        int newGScore = currentPath.Score_g + neighbour.MyHexMap.MovementCost;
+                        if (newGScore < neighbourPath.Score_g)
+                        {
+                            if (openSet.Contains(neighbourPath))
+                            {
+                                openSet.Remove(neighbourPath);
+                            }
+
+                            neighbourPath.UpdateValues(newGScore, currentPath);
+                            openSet.Add(neighbourPath);
+                        }
                     }
                 }
             }
+            return null;
         }
-        return null;
-    }
 
-    /// <summary>
-    /// Dictionary allows you to access pathvalue based on hexagon
-    /// instead of through the priority queue
-    /// </summary>
-    public Dictionary<IHexagon, IPathValue> PathValueDict;
+        /// <summary>
+        /// Dictionary allows you to access pathvalue based on hexagon
+        /// instead of through the priority queue
+        /// </summary>
+        public Dictionary<IHexagon, IPathValue> PathValueDict;
 
-    /// <summary>
-    /// Class variable allows heuristic to be calculated
-    /// for all nodes
-    /// </summary>
-    public IHexagon Destination;
+        /// <summary>
+        /// Class variable allows heuristic to be calculated
+        /// for all nodes
+        /// </summary>
+        public IHexagon Destination;
 
-    /// <summary>
-    /// Used to calculate the centre of the path, meaning paths are straighter
-    /// </summary>
-    public IHexagon Start;
+        /// <summary>
+        /// Used to calculate the centre of the path, meaning paths are straighter
+        /// </summary>
+        public IHexagon Start;
 
-    #endregion
+        #endregion
 
-    //----------------------------------------------------------------------------
-    //              Hexes in Range
-    //----------------------------------------------------------------------------
+        //----------------------------------------------------------------------------
+        //              Hexes in Range
+        //----------------------------------------------------------------------------
 
-    /// <summary>
-    /// This is an almost direct copy of above, but it sets the heuristic distance to
-    /// to the start location <para/>
-    /// 
-    /// So in practice it is Dijkstra's out until range
-    /// </summary>
-    public HashSet<IHexagon> GetHexesInRange(IHexagon start, int range)
-    {
-        SortedSet<IPathValue> openSet = new SortedSet<IPathValue>();
-        HashSet<IHexagon> hexesInRange = new HashSet<IHexagon>();
-        PathValueDict = new Dictionary<IHexagon, IPathValue>();
-
-        Destination = start;
-        Start = start;
-
-        IPathValue firstPath = GetPathValue(start);
-        firstPath.SetFirstPathDistance();
-
-        openSet.Add(firstPath);
-        while (openSet.Count != 0)
+        /// <summary>
+        /// This is an almost direct copy of above, but it sets the heuristic distance to
+        /// to the start location <para/>
+        /// 
+        /// So in practice it is Dijkstra's out until range
+        /// </summary>
+        public HashSet<IHexagon> GetHexesInRange(IHexagon start, int range)
         {
-            IPathValue currentPath = openSet.Min;
-            openSet.Remove(currentPath);
+            SortedSet<IPathValue> openSet = new SortedSet<IPathValue>();
+            HashSet<IHexagon> hexesInRange = new HashSet<IHexagon>();
+            PathValueDict = new Dictionary<IHexagon, IPathValue>();
 
-            IHexagon currentHex = currentPath.Hex;
-            hexesInRange.Add(currentHex);
+            Destination = start;
+            Start = start;
 
-            foreach (IHexagon neighbour in currentHex.MyHexMap.Neighbours)
+            IPathValue firstPath = GetPathValue(start);
+            firstPath.SetFirstPathDistance();
+
+            openSet.Add(firstPath);
+            while (openSet.Count != 0)
             {
-                if (!neighbour.MyHexMap.IsOccupied())
-                {
-                    IPathValue neighbourPath = GetPathValue(neighbour);
-                    int newGScore = currentPath.Score_g + neighbour.MyHexMap.MovementCost;
-                    if (newGScore < neighbourPath.Score_g && newGScore <= range)
-                    {
-                        if (openSet.Contains(neighbourPath))
-                        {
-                            openSet.Remove(neighbourPath);
-                        }
+                IPathValue currentPath = openSet.Min;
+                openSet.Remove(currentPath);
 
-                        neighbourPath.UpdateValues(newGScore, currentPath);
-                        openSet.Add(neighbourPath);
+                IHexagon currentHex = currentPath.Hex;
+                hexesInRange.Add(currentHex);
+
+                foreach (IHexagon neighbour in currentHex.MyHexMap.Neighbours)
+                {
+                    if (!neighbour.MyHexMap.IsOccupied())
+                    {
+                        IPathValue neighbourPath = GetPathValue(neighbour);
+                        int newGScore = currentPath.Score_g + neighbour.MyHexMap.MovementCost;
+                        if (newGScore < neighbourPath.Score_g && newGScore <= range)
+                        {
+                            if (openSet.Contains(neighbourPath))
+                            {
+                                openSet.Remove(neighbourPath);
+                            }
+
+                            neighbourPath.UpdateValues(newGScore, currentPath);
+                            openSet.Add(neighbourPath);
+                        }
                     }
                 }
-            }          
+            }
+            return hexesInRange;
         }
-        return hexesInRange;
+
+
+        //----------------------------------------------------------------------------
+        //              Get Path Value
+        //----------------------------------------------------------------------------
+
+        /// <summary>
+        /// GetPathValue checks if a hex has been visited before. <para/>
+        /// If it has, return the original PathValue <para/>
+        /// Otherwise, construct a new PathValue
+        /// 
+        /// </summary>
+        public IPathValue GetPathValue(IHexagon hex)
+        {
+            if (PathValueDict.ContainsKey(hex))
+            {
+                return PathValueDict[hex];
+            }
+            else
+            {
+                Vector3 centre = (Destination.HexTransform.position + Start.HexTransform.position) / 2;
+                IPathValue myPath = new PathValue(400000, HexMath.FindDistance(hex, Destination), centre, hex, null);
+                PathValueDict.Add(hex, myPath);
+                return myPath;
+            }
+        }
     }
 
-
-    //----------------------------------------------------------------------------
-    //              Get Path Value
-    //----------------------------------------------------------------------------
-
-    /// <summary>
-    /// GetPathValue checks if a hex has been visited before. <para/>
-    /// If it has, return the original PathValue <para/>
-    /// Otherwise, construct a new PathValue
-    /// 
-    /// </summary>
-    public IPathValue GetPathValue(IHexagon hex)
-    {
-        if(PathValueDict.ContainsKey(hex))
-        {
-            return PathValueDict[hex];
-        }
-        else
-        {
-            Vector3 centre = (Destination.HexTransform.position + Start.HexTransform.position) / 2;
-            IPathValue myPath = new PathValue(400000, HexMath.FindDistance(hex, Destination), centre, hex, null);
-            PathValueDict.Add(hex, myPath);
-            return myPath;
-        }
-    }
 }

@@ -3,6 +3,9 @@ using System.Collections.Generic;
 using NSubstitute;
 using NUnit.Framework;
 using UnityEngine;
+using CriticalRole.Contents;
+using CriticalRole.Map;
+
 
 namespace Tests
 {
@@ -17,7 +20,7 @@ namespace Tests
             GameObject character = new GameObject();
             character.transform.position = new Vector3(5, 0, 3);
             character.AddComponent<IContentMarker>();
-            BaseHexContent moveableCharacter = character.AddComponent<BaseHexContent>();
+            ObjectHexContent moveableCharacter = character.AddComponent<ObjectHexContent>();
 
             mapGeneration.MapRadius = 10;
             mapGeneration.HexagonPrefab = new GameObject();
@@ -38,7 +41,7 @@ namespace Tests
             GameObject character = new GameObject();
             character.transform.position = new Vector3(5, 0, 3);
             character.AddComponent<IContentMarker>();
-            BaseHexContent moveableCharacter = character.AddComponent<BaseHexContent>();
+            ObjectHexContent moveableCharacter = character.AddComponent<ObjectHexContent>();
 
             mapGeneration.MapRadius = 10;
             mapGeneration.HexagonPrefab = new GameObject();

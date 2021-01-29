@@ -1,20 +1,24 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using CriticalRole.Attacking;
+using CriticalRole.Map;
+
 
 namespace CriticalRole.UI
 {
+    [RequireComponent(typeof(PlayerAttackController))]
     public class UI_InputAttack : MonoBehaviour, UI_InputSubclass
     {
         public UIManager MyUIManager;
 
-        PlayerAttackController MyPlayerAttackController;
+        IPlayerAttackController MyPlayerAttackController;
         public bool SelectAttack = false;
 
         public void Initialise(UIManager myUI_Input)
         {
             MyUIManager = myUI_Input;
-            MyPlayerAttackController = new PlayerAttackController();
+            MyPlayerAttackController = GetComponent<PlayerAttackController>();
         }
 
 
@@ -40,7 +44,7 @@ namespace CriticalRole.UI
         {
             if(SelectAttack)
             {
-                MyPlayerAttackController.HighlightHex(hexagon);
+                MyPlayerAttackController.MouseHover(hexagon);
             }
         }
 
@@ -48,7 +52,7 @@ namespace CriticalRole.UI
         {
             if(SelectAttack)
             {
-                MyPlayerAttackController.UnhighlightHex(hexagon);
+                MyPlayerAttackController.MouseUnhover(hexagon);
             }
         }
 

@@ -1,7 +1,12 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using CriticalRole.Dependancy;
+using CriticalRole.Health;
+using CriticalRole.Narration;
+using CriticalRole.UI;
 using CriticalRole.BattleCamera;
+using CriticalRole.Death;
 
 namespace CriticalRole.Turns
 {
@@ -16,11 +21,6 @@ namespace CriticalRole.Turns
 
     public interface ITurnController
     {
-        /// <summary>
-        /// DependancyManager only. Initialises the StartTurn List. <para/>
-        /// So other systems can add themselves to it
-        /// </summary>
-        void Initialise();
 
         /// <summary>
         /// Called by DependancyManager. Starts the TurnChangover process
@@ -33,6 +33,9 @@ namespace CriticalRole.Turns
         /// Wrapper for StartTurnList.Add(), just to protect the actual list
         /// </summary>
         void AddStartTurnEvent(IStartTurnEvent startTurnEvent);
+
+        void RegisterNarrator(Narrator narrator);
+        void RegisterBattleCamManager(IBattleCamManager camManager);
     }
 
 
@@ -41,81 +44,95 @@ namespace CriticalRole.Turns
 
 
     [RequireComponent(typeof(TurnControllerMarker))]
-    public class TurnController : MonoBehaviour, ITurnController
+    public class TurnController : MonoBehaviour, ITurnController, IDeathEvent
     {
 
         //----------------------------------------------------------------------------
-        //             Registration
+        //             Awake
         //----------------------------------------------------------------------------
-        
-        #region Registration
+
+        #region Awake
 
         private void Awake()
         {
             _RegisterWithDependancyManager();
+            _AddDeathEvent();
         }
 
         #region Implementation
         private void _RegisterWithDependancyManager()
         {
-            GameObject dependancyGO = FindObjectOfType<DependancyManagerMarker>().gameObject;
+            GameObject dependancyGO = _GetDependancyGO();
             IBattleDependancyManager dependancyManager = dependancyGO.GetComponent<IBattleDependancyManager>();
             dependancyManager.RegisterTurnController(this);
         }
-        #endregion
 
-        #endregion
-
-
-
-
-
-        //----------------------------------------------------------------------------
-        //             Initialise
-        //----------------------------------------------------------------------------
-
-        #region Initialise
-
-        /// <summary>
-        /// BeginGame starts the first turn <para />
-        /// Must be called last by the dependancy manager
-        /// </summary>
-        public void Initialise()
+        private void _AddDeathEvent()
         {
-            _BuildTurnList();
-            StartTurnEvents = new List<IStartTurnEvent>();
-        }
-
-        /// <summary>
-        /// Sorted Initiative Order
-        /// </summary>
-        public List<ITurnSort> TurnList;
-        public List<IStartTurnEvent> StartTurnEvents;
-
-        #region Implementation
-        private void _BuildTurnList()
-        {
-            HasTurnMarker[] TurnMarkerArray = FindObjectsOfType<HasTurnMarker>();
-            TurnList = new List<ITurnSort>();
-
-            HasTurnMaxIndex = -1;
-            foreach (HasTurnMarker turnMarker in TurnMarkerArray)
+            DeathManagerMarker[] deathManagerMarkers = FindObjectsOfType<DeathManagerMarker>();
+            foreach (DeathManagerMarker deathManagerMarker in deathManagerMarkers)
             {
-                HasTurnMaxIndex++;
-                IHasTurn hasTurn = turnMarker.gameObject.GetComponent<IHasTurn>();
-                hasTurn.Initialise(this);
-                TurnList.Add(turnMarker.gameObject.GetComponent<IHasTurn>().TurnSort);
+                deathManagerMarker.gameObject.GetComponent<IDeathManager>().AddGlobalDeathEvent(this);
             }
-
-            TurnList.Sort();
-            CurrentTurn = -1;
         }
-        #endregion
+
+
+        private GameObject _GetDependancyGO()
+        {
+            DependancyManagerMarker dependancy = FindObjectOfType<DependancyManagerMarker>();
+            if (dependancy == null)
+            {
+                Debug.LogError("No dependancy manager in scene");
+            }
+            return dependancy.gameObject;
+        }
+
 
         #endregion
 
+        #endregion
 
 
+
+        //----------------------------------------------------------------------------
+        //            DependancyInjections
+        //----------------------------------------------------------------------------
+
+        #region DependancyInjections
+
+
+        //----------------------------------------------------------------------------
+        //             RegisterNarrator
+        //----------------------------------------------------------------------------
+
+        #region RegisterNarrator
+        public void RegisterNarrator(Narrator narrator)
+        {
+            MyNarrator = narrator;
+        }
+
+        public Narrator MyNarrator;
+
+        #endregion
+
+
+
+        //----------------------------------------------------------------------------
+        //             RegisterBattleCamManager
+        //----------------------------------------------------------------------------
+
+        #region RegisterBattleCamManager
+        public void RegisterBattleCamManager(IBattleCamManager camManager)
+        {
+            MyCamManager = camManager;
+        }
+
+        IBattleCamManager MyCamManager;
+
+        #endregion
+
+
+        #endregion
 
 
         //----------------------------------------------------------------------------
@@ -128,8 +145,20 @@ namespace CriticalRole.Turns
             StartTurnEvents.Add(startTurnEvent);
         }
 
-        #endregion
+        private List<IStartTurnEvent> _StartTurnEvents;
+        public List<IStartTurnEvent> StartTurnEvents
+        {
+            get
+            {
+                if (_StartTurnEvents == null)
+                {
+                    _StartTurnEvents = new List<IStartTurnEvent>();
+                }
+                return _StartTurnEvents;
+            }
+        }
 
+        #endregion
 
 
         //----------------------------------------------------------------------------
@@ -139,13 +168,50 @@ namespace CriticalRole.Turns
         #region BeginGame
         public void BeginGame()
         {
+            _BuildTurnList();
             StartTurnEvents.Sort(new StartTurnSort());
             TurnChangeover();
         }
 
+        #region Implementation
+        private void _BuildTurnList()
+        {
+            HasTurnMarker[] TurnMarkerArray = FindObjectsOfType<HasTurnMarker>();
+
+            HasTurnMaxIndex = -1;
+            foreach (HasTurnMarker turnMarker in TurnMarkerArray)
+            {
+                HasTurnMaxIndex++;
+                IHasTurn hasTurn = turnMarker.gameObject.GetComponent<IHasTurn>();
+                hasTurn.Initialise(this);
+                TurnList.Add(turnMarker.gameObject.GetComponent<IHasTurn>());
+                hasTurn.Index = HasTurnMaxIndex;
+            }
+
+            TurnList.Sort(new TurnSort());
+            CurrentTurn = -1;
+        }
+
+        private List<IHasTurn> _TurnList;
+
+        /// <summary>
+        /// Sorted Initiative Order
+        /// </summary>
+        public List<IHasTurn> TurnList
+        {
+            get
+            {
+                if(_TurnList == null)
+                {
+                    _TurnList = new List<IHasTurn>();
+                }
+                return _TurnList;
+            }
+        }
+
         #endregion
 
-
+        #endregion
 
 
         //----------------------------------------------------------------------------
@@ -179,8 +245,6 @@ namespace CriticalRole.Turns
         #endregion
 
 
-
-
         //----------------------------------------------------------------------------
         //             Turn Changeover
         //----------------------------------------------------------------------------
@@ -198,20 +262,45 @@ namespace CriticalRole.Turns
         public IEnumerator TurnChangeoverCoroutine()
         {
             UpdateCurrentTurn();
+            IHasTurn hasTurn = TurnList[CurrentTurn];
+
+
+            Coroutine camCoroutine = StartCoroutine(MyCamManager.StartTurnScript(hasTurn));
+            yield return StartCoroutine(MyNarrator.StartTurn(hasTurn));
+            StopCoroutine(camCoroutine);
+            yield return StartCoroutine(MyCamManager.StartTurnPlayer(hasTurn));
+
+            
             foreach (IStartTurnEvent startTurnEvent in StartTurnEvents)
             {
-                yield return StartCoroutine(startTurnEvent.StartTurn(TurnList[CurrentTurn].HasTurn));
+                yield return StartCoroutine(startTurnEvent.StartTurn(hasTurn));
             }
-            TurnList[CurrentTurn].HasTurn.StartTurn();
+
+            //hasTurn.StartTurn();
         }
 
 
         #endregion
 
 
+        //----------------------------------------------------------------------------
+        //             ReactToDeath
+        //----------------------------------------------------------------------------
 
+        #region  ReactToDeath
 
-
+        public IEnumerator ReactToDeath(IHasTurn hasTurn)
+        {
+            TurnList.Remove(hasTurn);
+            HasTurnMaxIndex--;
+            if(CurrentTurn >= hasTurn.Index)
+            {
+                CurrentTurn--;
+                TurnChangeover();
+            }
+            yield break;
+        }
+        #endregion
 
     }
 

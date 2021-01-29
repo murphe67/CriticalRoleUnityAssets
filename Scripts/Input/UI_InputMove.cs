@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using CriticalRole.Move;
+using CriticalRole.Map;
 
 namespace CriticalRole.UI
 {

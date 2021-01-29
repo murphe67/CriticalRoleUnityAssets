@@ -6,9 +6,7 @@ namespace CriticalRole.Turns
 {
     public enum StartTurnType
     {
-        CameraEvent,
         UIEvent,
-        HideEvent
     }
 
     public interface IStartTurnEvent

@@ -2,6 +2,9 @@
 using System.Collections.Generic;
 using UnityEngine;
 using CriticalRole.Turns;
+using CriticalRole.Attacking;
+using CriticalRole.Death;
+using CriticalRole.Dependancy;
 
 //----------------------------------------------------------------------------
 //              Class Description
@@ -18,11 +21,31 @@ namespace CriticalRole.BattleCamera
 {
     public interface IBattleCamManager
     {
-        void Initialise();
+        /// <summary>
+        /// Subclass that showcases an attack with the camera
+        /// </summary>
+        BattleCamAttackFocus MyAttackFocus { get; }
+
+
+        IEnumerator SwitchToScriptCamera();
+        IEnumerator SwitchToPlayerCamera();
+
+        IEnumerator StartTurnScript(IHasTurn hasTurn);
+        IEnumerator StartTurnPlayer(IHasTurn hasTurn);
+
+        /// <summary>
+        /// Showcase the dying character with the camera
+        /// </summary>
+        IEnumerator FocusOnDeath(Transform dying);
+
+        /// <summary>
+        /// Change the speed at which the camera fade in happens
+        /// </summary>
+        IEnumerator ChangeSwitchSpeed(float speed);
     }
 
 
-    public class BattleCamManager : MonoBehaviour, IBattleCamManager, IStartTurnEvent
+    public class BattleCamManager : MonoBehaviour, IBattleCamManager
     {
         //----------------------------------------------------------------------------
         //             Inspector Variables
@@ -37,10 +60,10 @@ namespace CriticalRole.BattleCamera
 
         /// <summary>
         /// How high above the ground the focus is <para />
-        /// Originally set to 0.8f
+        /// Originally set to 0.7f
         /// </summary>
-        [Tooltip("Default value: 0.8")]
-        public float FocusHeight = 0.8f;
+        [Tooltip("Default value: 0.7")]
+        public float FocusHeight = 0.7f;
 
 
         public Animator Crossfade;
@@ -50,60 +73,60 @@ namespace CriticalRole.BattleCamera
 
 
         //----------------------------------------------------------------------------
-        //             Register
-        //----------------------------------------------------------------------------
-
-        #region Register
-        private void Awake()
-        {
-            _RegisterWithDependancyManager();
-        }
-
-
-
-        #region Implementation
-        private void _RegisterWithDependancyManager()
-        {
-            GameObject dependancyGO = FindObjectOfType<DependancyManagerMarker>().gameObject;
-            IBattleDependancyManager dependancyManager = dependancyGO.GetComponent<IBattleDependancyManager>();
-            dependancyManager.RegisterCameraManager(this);
-        }
-
-        #endregion
-
-        #endregion
-
-
-
-
-        //----------------------------------------------------------------------------
         //             Initialise
         //----------------------------------------------------------------------------
 
         #region Initialise
 
-        public void Initialise()
+
+        public void Awake()
         {
-            _AddToStartTurnEventManager();
+            _RegisterWithTurnController();
+            _RegisterWithAttackManager();
+            _RegisterWithDeathManager();
+
             _SpawnPlayerCamera();
             _SpawnScriptCamera();
+            
+            _SpawnHideableManager();
+            _SpawnAttackFocus();
 
-            _GetHideables();
+            Crossfade.speed = DefaultFadeSpeed;
+            CurrentSwitchDelay = DefaultSwitchDelay;
         }
 
         public IBattleCamController PlayerCamController;
         public IBattleCamController ScriptCamController;
-        public BattleCamScriptInput ScriptCamInput;
-        public List<Hideable> Hideables;
+        public IBattleCamScriptInput ScriptCamInput;
+        public HideableManager MyHideableManager;
+        public BattleCamAttackFocus MyAttackFocus { get; set; }
 
         #region Implementation
-        private void _AddToStartTurnEventManager()
+        private void _RegisterWithTurnController()
         {
             TurnControllerMarker[] turnControllerMarkers = FindObjectsOfType<TurnControllerMarker>();
             foreach (TurnControllerMarker turnControllerMarker in turnControllerMarkers)
             {
-                TurnController turnController = turnControllerMarker.GetComponent<TurnController>();
-                turnController.AddStartTurnEvent(this);
+                ITurnController turnController = turnControllerMarker.GetComponent<ITurnController>();
+                turnController.RegisterBattleCamManager(this);
+            }
+        }
+
+        private void _RegisterWithAttackManager()
+        {
+            AttackManagerMarker[] attackManagerMarkers = FindObjectsOfType<AttackManagerMarker>();
+            foreach (AttackManagerMarker attackManagerMarker in attackManagerMarkers)
+            {
+                attackManagerMarker.gameObject.GetComponent<IAttackManager>().RegisterCamManager(this);
+            }
+        }
+
+        private void _RegisterWithDeathManager()
+        {
+            DeathManagerMarker[] deathManagerMarkers = FindObjectsOfType<DeathManagerMarker>();
+            foreach(DeathManagerMarker deathManagerMarker in deathManagerMarkers)
+            {
+                deathManagerMarker.gameObject.GetComponent<IDeathManager>().RegisterBattleCamManager(this);
             }
         }
 
@@ -112,7 +135,7 @@ namespace CriticalRole.BattleCamera
             GameObject PlayerCameraGO = new GameObject("Player Camera");
             IBattleCameraSpawner PlayerCameraSpawner = PlayerCameraGO.AddComponent<BattleCamSpawner>();
             PlayerCamController = PlayerCameraSpawner.SpawnCamera(FocusHeight, CameraPrefab, BattleCameraInputType.PlayerControlled);
-            PlayerCamController.SetActive(false);
+            PlayerCamController.MyBattleCamTransform.SetActive(false);
         }
 
         private void _SpawnScriptCamera()
@@ -120,22 +143,23 @@ namespace CriticalRole.BattleCamera
             GameObject ScriptCameraGO = new GameObject("Script Camera");
             IBattleCameraSpawner ScriptCameraSpawner = ScriptCameraGO.AddComponent<BattleCamSpawner>();
             ScriptCamController = ScriptCameraSpawner.SpawnCamera(FocusHeight, CameraPrefab, BattleCameraInputType.ScriptController);
-            ScriptCamInput = (BattleCamScriptInput)ScriptCamController.MyBattleCamInput;
-            ScriptCamController.SetActive(false);
+            ScriptCamInput = (IBattleCamScriptInput)ScriptCamController.MyBattleCamInput;
+            ScriptCamController.MyBattleCamTransform.SetActive(false);
         }
 
         /// <summary>
         /// Initialise the Hideables list, and also each of the hideables
         /// </summary>
-        private void _GetHideables()
+        private void _SpawnHideableManager()
         {
-            Hideables = new List<Hideable>();
-            Hideable[] hideableArray = FindObjectsOfType<Hideable>();
-            foreach (Hideable hideable in hideableArray)
-            {
-                Hideables.Add(hideable);
-                hideable.Initialise();
-            }
+            MyHideableManager = new HideableManager();
+            MyHideableManager.Initialise();
+        }
+
+        private void _SpawnAttackFocus()
+        {
+            MyAttackFocus = gameObject.AddComponent<BattleCamAttackFocus>();
+            MyAttackFocus.Initialise(this);
         }
 
         #endregion
@@ -152,98 +176,165 @@ namespace CriticalRole.BattleCamera
 
         #region StartTurn
 
-        public IEnumerator StartTurn(IHasTurn hasTurn)
+        public IEnumerator StartTurnScript(IHasTurn hasTurn)
         {
-            yield return StartCoroutine(_SwitchToScriptCamera());
-            _FocusOnIHasTurn(hasTurn);
+            CurrentHasTurn = hasTurn;
+            CurrentHasTurnTransform = hasTurn.MyHexContents.ContentTransform;
 
-            yield return new WaitForSeconds(2f);
+            yield return StartCoroutine(SwitchToScriptCamera());
+            _StartTurnFocus();
+        }
 
-            yield return StartCoroutine(_SwitchToPlayerCamera());
-            _PointAtIHasTurn(hasTurn);
+        public IEnumerator StartTurnPlayer(IHasTurn hasTurn)
+        {
+            yield return StartCoroutine(SwitchToPlayerCamera());
+            _PointAtIHasTurn();
 
             yield return new WaitForSeconds(0.5f);
         }
+
+        public IHasTurn CurrentHasTurn;
+        public Transform CurrentHasTurnTransform;
 
         #region Implementation
 
         /// <summary>
+        /// Set the ScriptCamera to rotate around the new IHasTurn
+        /// </summary>
+        private void _StartTurnFocus()
+        {
+            Vector3 myPosition = CurrentHasTurnTransform.position;
+            Quaternion myRotation = CurrentHasTurnTransform.rotation;
+
+            ScriptCamController.MyBattleCamTransform.JumpTo(myPosition.x, myPosition.z);
+            ScriptCamController.MyBattleCamTransform.ZoomTo(3);
+            ScriptCamController.MyBattleCamTransform.RotateTo(myRotation);
+            ScriptCamController.MyBattleCamTransform.RotateAround(myPosition, -10);
+
+            ScriptCamInput.SetInputs(0.1f, 0, 0, 0);
+        }
+
+
+        #endregion
+
+        #endregion
+
+
+        //----------------------------------------------------------------------------
+        //             FocusOnDeath
+        //----------------------------------------------------------------------------
+        
+        #region FocusOnDeath
+        public IEnumerator FocusOnDeath(Transform dying)
+        {
+            yield return StartCoroutine(SwitchToScriptCamera());
+            Vector3 position = dying.position;
+            ScriptCamController.MyBattleCamTransform.JumpTo(position.x, position.z);
+            ScriptCamController.MyBattleCamTransform.RotateTo(dying.rotation);
+            ScriptCamController.MyBattleCamTransform.RotateAround(position, 130);
+            ScriptCamController.MyBattleCamTransform.ZoomTo(1);
+
+            ScriptCamInput.SetInputs(0.02f, 0, 0, 0);
+            yield return new WaitForSeconds(3f);
+            ScriptCamInput.SetInputs(0, 0, 0, 0);
+        }
+
+        #endregion
+
+
+
+        //----------------------------------------------------------------------------
+        //             Camera Switching
+        //----------------------------------------------------------------------------
+
+        #region Camera Switching
+
+        /// <summary>
         /// Crossfade to ScriptCamera <para/>
-        /// Takes 0.5 seconds to return <para/>
+        /// Takes 0.4 seconds to return <para/>
         /// Takes 0.5 seconds after it returns to fade back in, to allow things to be moved in the blackout
         /// </summary>
-        private IEnumerator _SwitchToScriptCamera()
+        public IEnumerator SwitchToScriptCamera()
         {
             Crossfade.SetTrigger("Start");
 
-            yield return new WaitForSeconds(0.5f);
+            yield return new WaitForSeconds(CurrentSwitchDelay);
 
-            _ResetHideables();
-            PlayerCamController.SetActive(false);
-            ScriptCamController.SetActive(true);
+            PlayerCamController.MyBattleCamTransform.SetActive(false);
+            ScriptCamController.MyBattleCamTransform.SetActive(true);
 
             Crossfade.SetTrigger("End");
-        }
-
-        /// <summary>
-        /// Set the ScriptCamera to rotate around the new IHasTurn
-        /// </summary>
-        private void _FocusOnIHasTurn(IHasTurn hasTurn)
-        {
-            Vector3 myPosition = hasTurn.MyHexContents.ContentTransform.position;
-            ScriptCamController.JumpTo(myPosition.x, myPosition.z);
-            ScriptCamController.ZoomTo(2);
-            ScriptCamInput.RotationFloat = 0.1f;
+            ResetHideables(ScriptCamController.MyBattleCamTransform.Position);
         }
 
         /// <summary>
         /// Crossfade to PlayersCamera <para/>
-        /// Takes 0.5 seconds to return<para/>
+        /// Takes 0.4 seconds to return<para/>
         /// Takes 0.5 seconds after it returns to fade back in, to allow things to be moved in the blackout
         /// </summary>
-        private IEnumerator _SwitchToPlayerCamera()
+        public IEnumerator SwitchToPlayerCamera()
         {
-            
             Crossfade.SetTrigger("Start");
-            yield return new WaitForSeconds(0.5f);
+            yield return new WaitForSeconds(CurrentSwitchDelay);
 
-            _ResetHideables();
-            PlayerCamController.SetActive(true);
-            ScriptCamController.SetActive(false);
+            PlayerCamController.MyBattleCamTransform.SetActive(true);
+            ScriptCamController.MyBattleCamTransform.SetActive(false);
 
             Crossfade.SetTrigger("End");
+            ResetHideables(PlayerCamController.MyBattleCamTransform.Position);
         }
+
+        
+
+        public IEnumerator ChangeSwitchSpeed(float speed)
+        {
+            Crossfade.speed = speed;
+            CurrentSwitchDelay = DefaultSwitchDelay / speed;
+            yield return new WaitForSeconds(CurrentSwitchDelay * 2);
+            Crossfade.speed = DefaultFadeSpeed;
+            CurrentSwitchDelay = DefaultSwitchDelay;
+        }
+
+        public float CurrentSwitchDelay;
+        public readonly float DefaultSwitchDelay = 0.6f; 
+        public readonly float DefaultFadeSpeed = 1f;
+
 
         /// <summary>
         /// When giving control back to the player, move to the camera
         /// to the new IHasTurn
         /// </summary>
-        private void _PointAtIHasTurn(IHasTurn hasTurn)
+        public void _PointAtIHasTurn()
         {
-            Vector3 myPosition = hasTurn.MyHexContents.ContentTransform.position;
-            PlayerCamController.JumpTo(myPosition.x, myPosition.z);
-        }
+            Vector3 myPosition = CurrentHasTurnTransform.position;
+            Quaternion myRotation = CurrentHasTurnTransform.rotation;
 
-        private void _ResetHideables()
-        {
-            foreach(Hideable hideable in Hideables)
-            {
-                StartCoroutine(hideable.ShowCoroutine());
-            }
-        }
+            PlayerCamController.MyBattleCamTransform.RotateTo(myRotation);
+            PlayerCamController.MyBattleCamTransform.RotateAround(myPosition, 20);
 
-        public StartTurnType MyStartTurnType
-        {
-            get
-            {
-                return StartTurnType.CameraEvent;
-            }
+            PlayerCamController.MyBattleCamTransform.JumpTo(myPosition.x, myPosition.z);
         }
-
 
         #endregion
 
+
+
+
+        //----------------------------------------------------------------------------
+        //             ResetHideables
+        //----------------------------------------------------------------------------
+
+        #region ResetHideables
+
+        public void ResetHideables(Vector3 position)
+        {
+            MyHideableManager.ResetForNewCamera(position);
+        }
+
         #endregion
+
+        
+
     }
 }
 

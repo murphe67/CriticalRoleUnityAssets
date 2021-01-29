@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using NSubstitute;
 using NUnit.Framework;
 using UnityEngine;
+using CriticalRole.Map;
 
 namespace Tests
 {

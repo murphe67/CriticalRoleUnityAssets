@@ -1,6 +1,8 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using CriticalRole.Map;
+using CriticalRole.Turns;
 
 namespace CriticalRole.Move
 {
@@ -37,6 +39,14 @@ namespace CriticalRole.Move
 
     public class Movement : MonoBehaviour, IMovement
     {
+
+        /// <summary>
+        /// Stop any conflicts if somehow a rotation starts before the previous one finished. <para/>
+        /// There should only be one, stored in this. <para/>
+        /// A rotating coroutine should store themselves in this.
+        /// </summary>
+        public Coroutine RotatingCoroutine;
+
         //----------------------------------------------------------------------------
         //              Initialise
         //----------------------------------------------------------------------------
@@ -105,6 +115,9 @@ namespace CriticalRole.Move
 
         #endregion
 
+
+
+
         //----------------------------------------------------------------------------
         //              MoveToDestination
         //----------------------------------------------------------------------------
@@ -134,6 +147,10 @@ namespace CriticalRole.Move
             }
         }
         #endregion
+
+
+
+
 
         //----------------------------------------------------------------------------
         //              StepDownpath
@@ -177,6 +194,10 @@ namespace CriticalRole.Move
 
         #endregion
 
+
+
+
+
         //----------------------------------------------------------------------------
         //              MoveTransform
         //----------------------------------------------------------------------------
@@ -188,7 +209,7 @@ namespace CriticalRole.Move
         /// </summary>
         public IEnumerator MoveTransform()
         {
-            StartCoroutine(LookAtHexMove());
+            LookAtHexMove();
 
             while (DistanceFromDestination > 0.1)
             {
@@ -198,6 +219,8 @@ namespace CriticalRole.Move
                 yield return null;
             }
         }
+
+        #region Implementation
 
         //How far Contents should move per second
         public readonly float PhysicalMoveSpeed = 2.5f;
@@ -210,75 +233,192 @@ namespace CriticalRole.Move
             }
         }
 
-        public IEnumerator LookAtHexMove()
+        #endregion
+
+        #endregion
+
+
+
+
+
+        //----------------------------------------------------------------------------
+        //              LookAtHexMove
+        //--------------------------------------------------------------------------
+
+        #region LookAtHexMove
+
+        // Straight lines in hex maps are sometimes c shaped 
+        // Rotating twice to walk in a straight line looks dumb, 
+        // so in order to look in the direction you're walking 
+        // You need to check if the next current hex, next hex, and 3rd hex form a straight line
+
+        // if they don't, rotate to face NextHeex
+
+        public void LookAtHexMove()
         {
-            if(PathLength > 0)
+            if(RotatingCoroutine != null)
             {
-                EndCheckPosition = Path.PathStack.Peek().HexTransform.position;
-                StartCheckPosition = ContentTransform.position;
+                StopCoroutine(RotatingCoroutine);
             }
 
-            if (MoveAngle > 45)
+            _UpdateMoveCheckPositions();
+            _UpdateMoveLookedAtTransform();
+
+            UpdateLookingAtTransform();
+
+            RotatingCoroutine = StartCoroutine(RotateToLookingAtTransform(MoveRotationSpeed));
+        }
+
+
+
+        #region Implementation
+
+        private readonly int MoveRotationSpeed = 200;
+
+        private Vector3 _EndCheckPosition;
+        private Vector3 _StartCheckPosition;
+
+        /// <summary>
+        /// A 'straight' c shape move has a MoveAngle of between 28 and 32 degrees <para/>
+        /// For a 'straight' move, you should look at your final destination, 2 hexes away. <para/>
+        /// Otherwise, you should look at the next hex.
+        /// </summary>
+        private void _UpdateMoveLookedAtTransform()
+        {
+            if (_MoveAngle > 45)
             {
                 LookedAtTransform.position = NextHex.HexTransform.position;
             }
             else
             {
-                LookedAtTransform.position = ContentTransform.position + CheckDirection;
+                LookedAtTransform.position = ContentTransform.position + _CheckDirection;
             }
-
-            LookingAtTransform.position = ContentTransform.position;
-            LookingAtTransform.LookAt(LookedAtTransform);
-
-            while (Quaternion.Angle(ContentTransform.rotation, LookingAtTransform.rotation) > 0.01)
-            {
-                ContentTransform.rotation = Quaternion.RotateTowards(ContentTransform.rotation, LookingAtTransform.rotation, Time.deltaTime * 200);
-                yield return null;
-            }
-
         }
 
-        Vector3 EndCheckPosition;
-        Vector3 StartCheckPosition;
+        #region _MoveAngle
 
-        Vector3 CheckDirection
+        /// <summary>
+        /// What is angle between <para/>
+        /// your current position and your position in 2 steps?
+        /// </summary>
+        private float _MoveAngle
         {
             get
             {
-                return EndCheckPosition - StartCheckPosition;
+                return Vector3.Angle(ContentTransform.forward, _CheckDirection);
             }
         }
 
-        public float MoveAngle
+        /// <summary>
+        /// The direction vector between EndCheckPosition and StartCheckPosition
+        /// </summary>
+        private Vector3 _CheckDirection
         {
             get
             {
-                return Vector3.Angle(ContentTransform.forward, CheckDirection);
+                return _EndCheckPosition - _StartCheckPosition;
             }
         }
 
-
-        public void LookAtHexHover(IHexagon ihexagon, Transform contentTransform)
+        /// <summary>
+        /// If there are 2 hexes left, <para/>
+        /// Set EndCheckPosition to 2 hexes away, and StartCheckPosition to the current position. <para/>
+        /// If there is only one hex left, the current EndCheckPosition and StartCheckPosition are still valid <para/>
+        /// and are not changed.
+        /// </summary>
+        private void _UpdateMoveCheckPositions()
         {
-            StopAllCoroutines();
-            StartCoroutine(LookAtHexHoverCoroutine(ihexagon, contentTransform));
-        }
-
-        public IEnumerator LookAtHexHoverCoroutine(IHexagon hoverHex, Transform hoverTransform)
-        {
-            LookingAtTransform.position = hoverTransform.position;
-            LookingAtTransform.LookAt(hoverHex.HexTransform);
-
-            yield return new WaitForSeconds(0.05f);
-
-            while (LookingAtTransform.transform.rotation != hoverTransform.rotation)
+            if (PathLength > 0)
             {
-                hoverTransform.rotation = Quaternion.RotateTowards(hoverTransform.rotation, LookingAtTransform.rotation, Time.deltaTime * 800);
-                yield return null;
+                _EndCheckPosition = Path.PathStack.Peek().HexTransform.position;
+                _StartCheckPosition = ContentTransform.position;
             }
         }
 
         #endregion
+
+        #endregion
+
+        #endregion
+
+
+
+
+        //----------------------------------------------------------------------------
+        //              LookAtHexHover
+        //--------------------------------------------------------------------------
+
+        #region LookAtHexHover
+
+        public void LookAtHexHover(IHexagon ihexagon, Transform contentTransform)
+        {
+            if(RotatingCoroutine != null)
+            {
+                StopCoroutine(RotatingCoroutine);
+            }
+
+            ContentTransform = contentTransform;
+            LookedAtTransform.position = ihexagon.HexTransform.position;
+            RotatingCoroutine = StartCoroutine(LookAtHexHoverCoroutine());
+        }
+
+        public IEnumerator LookAtHexHoverCoroutine()
+        {
+            UpdateLookingAtTransform();
+
+            //delay in coroutine prevents crazy spinning if mouse is moving very fast
+            yield return new WaitForSeconds(0.05f);
+
+            RotatingCoroutine = StartCoroutine(RotateToLookingAtTransform(HoverRotationSpeed));
+        }
+
+        private readonly int HoverRotationSpeed = 800;
+
+
+        #endregion
+
+
+
+
+        //----------------------------------------------------------------------------
+        //              LookingAtTransform
+        //----------------------------------------------------------------------------
+
+        #region RotateToLookingAtTransform
+
+        public IEnumerator RotateToLookingAtTransform(int rotationSpeed)
+        {
+            while (_AngleToLookingAtTransform > 0.01)
+            {
+                ContentTransform.rotation = Quaternion.RotateTowards(ContentTransform.rotation,
+                                                                     LookingAtTransform.rotation,
+                                                                     Time.deltaTime * rotationSpeed);
+                yield return null;
+            }
+        }
+
+        /// <summary>
+        /// The angle between where the character is currently looking <para/>
+        /// Vs where it should be looking
+        /// </summary>
+        private float _AngleToLookingAtTransform
+        {
+            get
+            {
+                return Quaternion.Angle(ContentTransform.rotation, LookingAtTransform.rotation);
+            }
+        }
+
+
+        public void UpdateLookingAtTransform()
+        {
+            LookingAtTransform.position = ContentTransform.position;
+            LookingAtTransform.LookAt(LookedAtTransform);
+        }
+
+        #endregion
+
+
     }
 
 }

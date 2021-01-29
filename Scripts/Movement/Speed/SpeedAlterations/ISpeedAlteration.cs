@@ -2,68 +2,57 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public enum SpeedAlterationType
+namespace CriticalRole.Move
 {
-    BaseSpeed
-}
-
-public interface ISpeedAlteration
-{
-    SpeedAlterationSort MySpeedAlterationSort { get; }
-
-    SpeedAlterationType MySpeedAlterationType { get; }
-
-    int Alter(int alterableSpeed);
-
-}
-
-
-public class SpeedAlterationSort : IComparable
-{
-    public ISpeedAlteration SpeedAlteration;
-
-    public SpeedAlterationSort(ISpeedAlteration speedAlteration)
+    public enum SpeedAlterationType
     {
-        SpeedAlteration = speedAlteration;
+        BaseSpeed
     }
 
-    public int CompareTo(object obj)
+    public interface ISpeedAlteration
     {
-        if (obj == null) return 1;
+        SpeedAlterationType MySpeedAlterationType { get; }
 
-        SpeedAlterationSort otherSort = obj as SpeedAlterationSort;
-        if (otherSort != null)
-            return SpeedAlterationSortCompare(this, otherSort);
-        else
-            throw new ArgumentException("Object is not a SpeedAlterationSort");
+        float Alter(float alterableSpeed);
     }
 
-    public int SpeedAlterationSortCompare(SpeedAlterationSort a, SpeedAlterationSort b)
+
+    public class SpeedAlterationSort : IComparer<ISpeedAlteration>
     {
-        if(a.SpeedAlteration.MySpeedAlterationType < b.SpeedAlteration.MySpeedAlterationType)
+        public int Compare(ISpeedAlteration x, ISpeedAlteration y)
         {
-            return -1;
-        }
-        if (a.SpeedAlteration.MySpeedAlterationType > b.SpeedAlteration.MySpeedAlterationType)
-        {
-            return 1;
-        }
-        else
-        {
-            int speed = 200;
-            int speedA = a.SpeedAlteration.Alter(speed);
-            int speedB = b.SpeedAlteration.Alter(speed);
-            if(speedA < speedB)
+            if (x.MySpeedAlterationType < y.MySpeedAlterationType)
             {
                 return -1;
             }
-            else if(speedA > speedB)
+            if (x.MySpeedAlterationType > y.MySpeedAlterationType)
             {
                 return 1;
             }
             else
             {
-                return 0;
+                //this is probably overkill
+                //but it only returns equal if the alterations do the exact same thing
+
+                //this specific calculation will only confuse very few alterations for each other
+                //eg +200 and x2 will return equal from this.
+                //and none of them should occur in practice
+
+                int speed = 200;
+                float speedA = x.Alter(speed);
+                float speedB = y.Alter(speed);
+                if (speedA < speedB)
+                {
+                    return -1;
+                }
+                else if (speedA > speedB)
+                {
+                    return 1;
+                }
+                else
+                {
+                    return 0;
+                }
             }
         }
     }

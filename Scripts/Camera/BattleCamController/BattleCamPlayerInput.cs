@@ -4,6 +4,14 @@ using UnityEngine;
 
 namespace CriticalRole.BattleCamera
 {
+
+    //----------------------------------------------------------------------------
+    //                    Class Description
+    //----------------------------------------------------------------------------
+    //
+    //  Takes input from the mouse and keyboard to move the camera
+    //
+
     public class BattleCamPlayerInput : IBattleCamInput
     {
         /// <summary>

@@ -2,21 +2,23 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class BaseSpeed : ISpeedAlteration
+namespace CriticalRole.Move
 {
-    public int Speed;
-    public SpeedAlterationSort MySpeedAlterationSort { get; set; }
-    public SpeedAlterationType MySpeedAlterationType { get; set; }
-
-    public BaseSpeed(int speed)
+    public class BaseSpeed : ISpeedAlteration
     {
-        Speed = speed;
-        MySpeedAlterationType = SpeedAlterationType.BaseSpeed;
-        MySpeedAlterationSort = new SpeedAlterationSort(this);
+        public int Speed;
+        public SpeedAlterationType MySpeedAlterationType { get; set; }
+
+        public BaseSpeed(int speed)
+        {
+            Speed = speed;
+            MySpeedAlterationType = SpeedAlterationType.BaseSpeed;
+        }
+
+        public float Alter(float alterableSpeed)
+        {
+            return Speed;
+        }
     }
 
-    public int Alter(int alterableSpeed)
-    {
-        return Speed;
-    }
 }

@@ -2,6 +2,12 @@
 using System.Collections.Generic;
 using UnityEngine;
 using CriticalRole.UI;
+using CriticalRole.Contents;
+using CriticalRole.Attacking;
+using CriticalRole.Move;
+using CriticalRole.Character;
+using CriticalRole.Rolling;
+using CriticalRole.Death;
 
 namespace CriticalRole.Turns
 {
@@ -17,10 +23,25 @@ namespace CriticalRole.Turns
 
 
     [RequireComponent(typeof(HasTurnMarker))]
-    [RequireComponent(typeof(BaseHexContent))]
+    [RequireComponent(typeof(HasTurnHexContent))]
     [RequireComponent(typeof(HasSpeed))]
+    [RequireComponent(typeof(HasAttack))]
+    [RequireComponent(typeof(Equipment))]
     public class PlayerTurn : MonoBehaviour, IHasTurn
     {
+        /// <summary>
+        /// Set my turn controller- index in TurnList
+        /// </summary>
+        public int Index { get; set; }
+
+        public string Name
+        {
+            get
+            {
+                return gameObject.name;
+            }
+        }
+
         //----------------------------------------------------------------------------
         //             Initialise
         //----------------------------------------------------------------------------
@@ -29,15 +50,14 @@ namespace CriticalRole.Turns
             MyTurnController = turnController;
             MyHexContents = GetComponent<IContents>();
             MyHasSpeed = GetComponent<IHasSpeed>();
+            MyHasAttack = GetComponent<IHasAttack>();
+            MyHasStats = GetComponent<IHasStats>();
+            MyIsVictim = GetComponent<IIsVictim>();
 
-            TurnSort = new BaseTurnSort(Random.Range(0, 10), Random.Range(0, 10), MyHexContents.Location.MyHexMap.CoOrds, this);
+            _RollInitiative();
+
+            GetComponent<ICanDie>().RegisterHasTurn(this);
         }
-
-
-        /// <summary>
-        /// All IHasTurn should generate a TurnSort so it can be correctly placed in the initiative order
-        /// </summary>
-        public ITurnSort TurnSort { get; set; }
 
         /// <summary>
         /// Reference to contents as initiative order uses coords as fallback <para/>
@@ -47,35 +67,81 @@ namespace CriticalRole.Turns
 
         public IHasSpeed MyHasSpeed { get; set; }
 
+        public IHasAttack MyHasAttack { get; set; }
+
+        public IIsVictim MyIsVictim { get; set; }
+
+        public IHasStats MyHasStats { get; set; }
+
         //----------------------------------------------------------------------------
-        //             UI_Input reference
+        //             RollInitiative
         //----------------------------------------------------------------------------
 
+        private void _RollInitiative()
+        {
+            AddDexModToInitiative dexModAlteration = new AddDexModToInitiative(MyHasStats.GetStatMod(StatsType.Dexterity));
+            MyGeneralRoller.AddAlteration(RollType.Initiative, this, dexModAlteration);
+
+            Initiative = new InitiativeRollData();
+            MyGeneralRoller.Roll(RollType.Initiative, this, Initiative);
+            
+        }
+
+        public IInitiativeRollData Initiative { get; set; }
+
+        //----------------------------------------------------------------------------
+        //             RegisterUIManager
+        //----------------------------------------------------------------------------
+
+        #region RegisterUIManager
         /// <summary>
         /// This isn't anything more complex than a set function <para/>
         /// However makes the reference injection more explicit
         /// </summary>
-        public void SetUI_InputReference(UIManager ui_input)
+        public void RegisterUIManager(UIManager ui_input)
         {
             MyUIManager = ui_input;
         }
 
         public UIManager MyUIManager { get; private set; }
 
+        #endregion
+
+
+
+        //----------------------------------------------------------------------------
+        //             RegisterGeneralRoller
+        //----------------------------------------------------------------------------
+        #region RegisterGeneralRoller
+
+        public void RegisterGeneralRoller(IGeneralRoller generalRoller)
+        {
+            MyGeneralRoller = generalRoller;
+        }
+
+        IGeneralRoller MyGeneralRoller;
+
+        #endregion
+
+
+
         //----------------------------------------------------------------------------
         //             Start Turn
         //----------------------------------------------------------------------------
 
+        #region StartTurn
         /// <summary>
         /// For a PlayerTurn, nothing happens until the UI is interacted with <para/>
         /// So the only action taken is to inform the UI who's turn has started.
         /// </summary>
-        public void StartTurn()
+        public void StartTurn(ActionEnum action, BonusActionEnum bonusAction, ReactionEnum reaction)
         {
             MyUIManager.StartTurn(this);
-            Debug.Log("Start Turn: " + gameObject.name);
-            MyHasSpeed.RefreshMovement();
+            MyHasSpeed.ResetUsedMovement();
         }
+
+        #endregion
+
 
 
 
@@ -83,6 +149,8 @@ namespace CriticalRole.Turns
         //----------------------------------------------------------------------------
         //             End Turn
         //----------------------------------------------------------------------------
+
+        #region EndTurn
 
         /// <summary>
         /// End turn and pass control back to the turn controller
@@ -97,13 +165,21 @@ namespace CriticalRole.Turns
         /// </summary>
         public ITurnController MyTurnController;
 
+        #endregion
+
+
+
         //----------------------------------------------------------------------------
         //             End Move
         //----------------------------------------------------------------------------
+
+        #region EndMove
         public void EndMove()
         {
             MyUIManager.ShowTurnUI();
         }
+
+        #endregion
 
         public void EndAttack()
         {

@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using UnityEngine;
 using CriticalRole.Turns;
 using CriticalRole.Move;
+using CriticalRole.Map;
+using CriticalRole.Dependancy;
 
 namespace CriticalRole.UI
 {
@@ -44,45 +46,30 @@ namespace CriticalRole.UI
 
     [RequireComponent(typeof(UI_InputMove))]
     [RequireComponent(typeof(UI_InputAttack))]
-    public class UIManager : MonoBehaviour, I_UIManager, IStartTurnEvent
+    public class UIManager : MonoBehaviour, I_UIManager, IDependantManager, IStartTurnEvent
     {
         [Header("Set In Inspector")]
         public GameObject TurnUICanvas;
         public GameObject BackButtonCanvas;
 
-        
-
-
 
         //----------------------------------------------------------------------------
         //                    Registration
         //----------------------------------------------------------------------------
-
-        #region Registration
-
         private void Awake()
-        {
-            _RegisterWithDependancyManager();
-        }
-
-        #region Implementation
-
-        private void _RegisterWithDependancyManager()
         {
             GameObject dependancyGO = FindObjectOfType<DependancyManagerMarker>().gameObject;
             IBattleDependancyManager dependancyManager = dependancyGO.GetComponent<IBattleDependancyManager>();
-            dependancyManager.RegisterUIManager(this);
+            dependancyManager.Register(this);
         }
 
-        #endregion
-
-
-
-        #endregion
-
-
-
-
+        public DependantManagerType MyDependantManagerType
+        {
+            get
+            {
+                return DependantManagerType.UIManager; 
+            }
+        }
 
         //----------------------------------------------------------------------------
         //                    Initialise
@@ -101,7 +88,7 @@ namespace CriticalRole.UI
             _SetUpUICanvases();
             _PassRefToPlayerTurns();
             _PassRefToIHexagons();
-            _PassRefToTurnController();
+            _AddAsStartTurnEvent();
         }
 
         public UI_InputMove MyUI_InputMove { get; set; }
@@ -140,7 +127,7 @@ namespace CriticalRole.UI
             PlayerTurn[] playerTurns = FindObjectsOfType<PlayerTurn>();
             foreach (PlayerTurn playerTurn in playerTurns)
             {
-                playerTurn.SetUI_InputReference(this);
+                playerTurn.RegisterUIManager(this);
             }
         }
 
@@ -153,19 +140,22 @@ namespace CriticalRole.UI
             }
         }
 
-        private void _PassRefToTurnController()
+        private void _AddAsStartTurnEvent()
         {
             TurnControllerMarker[] turnControllerMarkers = FindObjectsOfType<TurnControllerMarker>();
-            foreach (TurnControllerMarker turnControllerMarker in turnControllerMarkers)
+            foreach(TurnControllerMarker turnControllerMarker in turnControllerMarkers)
             {
-                turnControllerMarker.GetComponent<ITurnController>().AddStartTurnEvent(this);
+                turnControllerMarker.gameObject.GetComponent<ITurnController>().AddStartTurnEvent(this);
             }
         }
 
+
         #endregion
 
 
         #endregion
+
+
 
 
 

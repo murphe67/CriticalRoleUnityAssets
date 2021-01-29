@@ -2,13 +2,18 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-//----------------------------------------------------------------------------
-//             Class Description
-//----------------------------------------------------------------------------
-//
-// Used to access every IHasTurn
-//
-public class HasTurnMarker : MonoBehaviour
+namespace CriticalRole.Turns
 {
+    //----------------------------------------------------------------------------
+    //             Class Description
+    //----------------------------------------------------------------------------
+    //
+    // Used to access every IHasTurn
+    //
+    public class HasTurnMarker : MonoBehaviour
+    {
+
+    }
 
 }
+

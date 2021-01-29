@@ -5,8 +5,30 @@ using UnityEngine;
 namespace CriticalRole.BattleCamera
 {
 
-    public class BattleCamScriptInput : IBattleCamInput
+    //----------------------------------------------------------------------------
+    //                    Class Description
+    //----------------------------------------------------------------------------
+    //
+    // Moves the camera around based on 4 floats.
+    // Fairly rudamentry but I didn't want to learn how the entire animation system 
+    // works when this was so simple to implement
+
+    public interface IBattleCamScriptInput
     {
+        void SetInputs(float rotation, float forward, float right, float zoom);
+    }
+
+
+    public class BattleCamScriptInput : IBattleCamInput, IBattleCamScriptInput
+    {
+        public void SetInputs(float rotation, float forward, float right, float zoom)
+        {
+            RotationFloat = rotation;
+            TranslateForwardFloat = forward;
+            TranslateRightFloat = right;
+            ZoomFloat = zoom;
+        }
+
         public float RotationFloat = 0f;
         public float TranslateForwardFloat = 0f;
         public float TranslateRightFloat = 0f;
